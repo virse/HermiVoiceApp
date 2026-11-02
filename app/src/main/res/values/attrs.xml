@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Akzentfarben-Attribute: werden je gewähltem Akzent im Overlay-Theme
+         gesetzt und von Layouts/Drawables via ?attr/... referenziert.
+         accentDark  = gedrückter Zustand (z. B. record_button_pressed)
+         accentBubble = dunkler, gedeckter Chat-Blasen-Hintergrund (Nutzer) -->
+    <attr name="accentDark" format="color" />
+    <attr name="accentBubble" format="color" />
+</resources>

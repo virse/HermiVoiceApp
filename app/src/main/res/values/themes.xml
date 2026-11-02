@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.HermiVoice" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="accentDark">@color/accent_dark</item>
+        <item name="accentBubble">@color/user_bubble</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+
+    <!-- Akzentfarben-Overlays: setzen colorAccent/colorPrimary + die eigenen
+         Attrs accentDark (gedrückt) und accentBubble (Chat-Blasen). Die App
+         wendet das zum gewählten Akzent gehörende Theme per setTheme() an. -->
+    <style name="Theme.HermiVoice.AccentGreen" parent="Theme.HermiVoice">
+        <item name="colorAccent">@color/accent_green</item>
+        <item name="colorPrimary">@color/accent_green</item>
+        <item name="accentDark">@color/accent_green_dark</item>
+        <item name="accentBubble">@color/accent_green_bubble</item>
+    </style>
+
+    <style name="Theme.HermiVoice.AccentDimGray" parent="Theme.HermiVoice">
+        <item name="colorAccent">@color/accent_dimgray</item>
+        <item name="colorPrimary">@color/accent_dimgray</item>
+        <item name="accentDark">@color/accent_dimgray_dark</item>
+        <item name="accentBubble">@color/accent_dimgray_bubble</item>
+    </style>
+
+    <style name="Theme.HermiVoice.AccentTeal" parent="Theme.HermiVoice">
+        <item name="colorAccent">@color/accent_teal</item>
+        <item name="colorPrimary">@color/accent_teal</item>
+        <item name="accentDark">@color/accent_teal_dark</item>
+        <item name="accentBubble">@color/accent_teal_bubble</item>
+    </style>
+
+    <style name="Theme.HermiVoice.AccentCadetBlue" parent="Theme.HermiVoice">
+        <item name="colorAccent">@color/accent_cadetblue</item>
+        <item name="colorPrimary">@color/accent_cadetblue</item>
+        <item name="accentDark">@color/accent_cadetblue_dark</item>
+        <item name="accentBubble">@color/accent_cadetblue_bubble</item>
+    </style>
+
+    <style name="Theme.HermiVoice.AccentChocolate" parent="Theme.HermiVoice">
+        <item name="colorAccent">@color/accent_chocolate</item>
+        <item name="colorPrimary">@color/accent_chocolate</item>
+        <item name="accentDark">@color/accent_chocolate_dark</item>
+        <item name="accentBubble">@color/accent_chocolate_bubble</item>
+    </style>
+
+    <style name="Theme.HermiVoice.AccentDarkSlateGray" parent="Theme.HermiVoice">
+        <item name="colorAccent">@color/accent_darkslategray</item>
+        <item name="colorPrimary">@color/accent_darkslategray</item>
+        <item name="accentDark">@color/accent_darkslategray_dark</item>
+        <item name="accentBubble">@color/accent_darkslategray_bubble</item>
+    </style>
+
+    <!-- Kurzlebige Share-Schleuse (Teilen/Senden mit): vollständig transparent,
+         damit beim Weiterreichen des Textes kein UI-Blinken sichtbar ist. -->
+    <style name="Theme.HermiVoice.Transparent" parent="Theme.HermiVoice">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>

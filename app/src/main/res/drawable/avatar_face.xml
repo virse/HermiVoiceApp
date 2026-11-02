@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hermes-Standard-Avatar (Gesicht), Material Symbols "face", 24dp.
+     Weiß eingefärbt; die Leuchtfarbe steuert der Aufrufer (imageTintList). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M8.113,13.888Q7.75,13.525 7.75,13t0.363,-0.888T9,11.75t0.888,0.363t0.362,0.887t-0.363,0.888T9,14.25t-0.888,-0.363zM14.113,13.888Q13.75,13.525 13.75,13t0.363,-0.888t0.887,-0.362t0.888,0.363t0.362,0.887t-0.363,0.888t-0.887,0.362t-0.888,-0.363zM12,20q3.35,0 5.675,-2.325T20,12q0,-0.6 -0.075,-1.162T19.65,9.75q-0.525,0.125 -1.05,0.188T17.5,10q-2.275,0 -4.3,-0.975T9.75,6.3q-0.8,1.95 -2.287,3.388T4,11.85V12q0,3.35 2.325,5.675T12,20zM12,22q-2.075,0 -3.9,-0.787t-3.175,-2.138T2.788,15.9T2,12t0.788,-3.9t2.137,-3.175T8.1,2.788T12,2t3.9,0.788t3.175,2.137T21.213,8.1T22,12t-0.788,3.9t-2.137,3.175t-3.175,2.138T12,22" />
+</vector>

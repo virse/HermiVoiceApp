@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Push-to-talk Button-Hintergrund, RUHE-Zustand (v1.18).
+     Kein State-Selector: der isPressed Reset des OnTouchListeners war auf dem
+     Geraet unzuverlaessig (druecken dunkel, loslassen blieb dunkel). Statt den
+     State Resolver zu bemuhen, tauscht der Handler den Hintergrund pro
+     Touch-Ereignis hart per Code:
+       DOWN  setzt record_button_pressed.xml (accent_dark)
+       UP    setzt record_button_bg.xml      (accent)
+     So kann der helle Ton beim Loslassen nicht haengen bleiben: reiner
+     Ressourcen-Wechsel, keine Zustandsmaschine. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="44dp" />
+    <solid android:color="?attr/colorAccent" />
+</shape>

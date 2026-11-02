@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#1e1e1e</color>
+    <color name="surface">#262626</color>
+    <color name="surface_light">#2d2d2d</color>
+    <color name="text_primary">#e8e8e8</color>
+    <color name="text_secondary">#9e9e9e</color>
+    <color name="accent">#4caf50</color>
+    <color name="accent_dark">#2e7d32</color>
+    <color name="user_bubble">#2b5d3b</color>
+    <color name="hermes_bubble">#2d2d2d</color>
+
+    <!-- Akzentfarben-Palette (Basis / Dunkel / Bubble) — je Familie.
+         Grün entspricht dem bisherigen Standard. -->
+    <!-- Grün (heute) -->
+    <color name="accent_green">#4caf50</color>
+    <color name="accent_green_dark">#2e7d32</color>
+    <color name="accent_green_bubble">#2b5d3b</color>
+    <!-- Dim Gray -->
+    <color name="accent_dimgray">#6C5737</color>
+    <color name="accent_dimgray_dark">#4c3b23</color>
+    <color name="accent_dimgray_bubble">#3a2e1c</color>
+    <!-- Teal -->
+    <color name="accent_teal">#47807A</color>
+    <color name="accent_teal_dark">#2f5a54</color>
+    <color name="accent_teal_bubble">#274a44</color>
+    <!-- Cadet Blue -->
+    <color name="accent_cadetblue">#6D99A2</color>
+    <color name="accent_cadetblue_dark">#4c7782</color>
+    <color name="accent_cadetblue_bubble">#334f57</color>
+    <!-- Chocolate -->
+    <color name="accent_chocolate">#E36E2B</color>
+    <color name="accent_chocolate_dark">#ab4d16</color>
+    <color name="accent_chocolate_bubble">#54301a</color>
+    <!-- Dark Slate Gray -->
+    <color name="accent_darkslategray">#44403D</color>
+    <color name="accent_darkslategray_dark">#2f2c2a</color>
+    <color name="accent_darkslategray_bubble">#282524</color>
+    <color name="header_bg">#171717</color>
+    <color name="input_bg">#262626</color>
+    <color name="state_listening">#f44336</color>
+    <color name="state_recognizing">#ff9800</color>
+    <color name="state_sending">#2196f3</color>
+    <color name="state_sent">#4caf50</color>
+    <color name="state_error">#f44336</color>
+</resources>

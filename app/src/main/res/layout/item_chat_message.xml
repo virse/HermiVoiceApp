@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chat-Nachricht: vertikale Wurzel. Oben ein Trenner über die VOLLE Breite,
+     darunter die Inhaltsspalte (Kopfzeile, Denkblock, Bubble).
+
+     Avatar sitzt INLINE in der Kopfzeile (keine eigene Spalte), typabhängig:
+       "Hermes" -> Avatar - "Hermes" - Datum/Uhrzeit - Mülleimer  (linksbündig)
+       "Du"     -> Mülleimer - Datum/Uhrzeit - "Du" - Avatar      (rechtsbündig)
+     Die Reihenfolge und die Ausrichtung setzt addMessage über den
+     messageBodyColumn.gravity (START/END) und die Umordnung in der Kopfzeile.
+     So bleibt der Avatar direkt neben seinem Label — kein Abstands-Loch. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Trenner über die gesamte Breite (folgt dem Akzent-Theme).
+         Standard ausgeblendet; in addMessage für den Beginn eines neuen
+         Frage-Blocks nach einer abgeschlossenen Antwort sichtbar gesetzt. -->
+    <View
+        android:id="@+id/messageSeparator"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="10dp"
+        android:background="?attr/colorAccent"
+        android:visibility="gone" />
+
+    <!-- Inhaltsspalte: match_parent, damit gravity START/END (gesetzt in
+         addMessage) die Kinder an den linken bzw. rechten Rand schiebt. -->
+    <LinearLayout
+        android:id="@+id/messageBodyColumn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="6dp">
+
+        <!-- Kopfzeile: Avatar + Label + Zeit + Mülleimer. Reihenfolge und
+             Position werden in addMessage typabhängig umgestellt. -->
+        <LinearLayout
+            android:id="@+id/messageHeaderRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:id="@+id/messageAvatar"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="14dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/avatar_face"
+                android:importantForAccessibility="yes"
+                android:contentDescription="@string/app_name" />
+
+            <TextView
+                android:id="@+id/messageTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:paddingEnd="8dp"
+                android:textSize="11sp"
+                android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/messageLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:paddingEnd="8dp"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/messageDeleteButton"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_delete"
+                android:tint="@color/text_secondary"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/message_delete"
+                android:importantForAccessibility="yes"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Reasoning-/Denk-Block (Klappmenü): Kopfzeile erscheint nur, wenn das
+             Modell Denk-Tokens liefert (z. B. DeepSeek). Standard zugeklappt;
+             Klick auf die Kopfzeile klappt den Denktext auf/zu. -->
+        <LinearLayout
+            android:id="@+id/reasoningHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="2dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="2dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/reasoningLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/reasoningChevron"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="▾"
+                android:textSize="20sp"
+                android:textColor="@color/text_primary"
+                android:paddingStart="8dp"
+                android:paddingEnd="2dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/messageReasoning"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="450dp"
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            android:textStyle="italic"
+            android:lineSpacingExtra="2dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/bubbleBody"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:maxWidth="450dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="12dp">
+
+            <TextView
+                android:id="@+id/messageText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:lineSpacingExtra="4dp"
+                android:textIsSelectable="true"
+                android:autoLink="web"
+                android:linksClickable="true"
+                android:textColorLink="?attr/colorAccent" />
+
+            <!-- Fallback-Hinweis: erscheint nur, wenn das Primärmodell nicht
+                 erreichbar war und das Fallback-Modell geantwortet hat.
+                 Standard ausgeblendet; wird beim Antwort-Empfang gesetzt. -->
+            <TextView
+                android:id="@+id/messageFallbackNote"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:textStyle="italic"
+                android:paddingTop="6dp"
+                android:visibility="gone" />
+
+            <!-- First-Token-Countdown: zeigt „Modell arbeitet… Ns“ klein und gedimmt
+                 wie die Fallback-Notiz, solange das Modell arbeitet. Standard
+                 ausgeblendet; wird beim Senden eingeblendet und beim ersten Token
+                 wieder ausgeblendet. Steht NICHT im messageText (16sp), sondern
+                 bewusst als eigene Zeile in Fallback-Notiz-Größe (12sp). -->
+            <TextView
+                android:id="@+id/messageCountdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:textStyle="italic"
+                android:paddingTop="6dp"
+                android:visibility="gone" />
+
+            <!-- Erneut senden: nur im Fehlerfall (kompletter Sendefehler) sichtbar.
+                 Liegt IN der Bubble, rechts unten ausgerichtet. Standard ausgeblendet;
+                 im Fehlerzweig von sendText sichtbar geschaltet und an ein sendText-Retry
+                 der zuletzt fehlgeschlagenen User-Nachricht gebunden. Textform wie ein Link. -->
+            <TextView
+                android:id="@+id/messageRetryButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:includeFontPadding="false"
+                android:text="@string/message_retry"
+                android:textSize="14sp"
+                android:textColor="?attr/colorAccent"
+                android:textStyle="bold"
+                android:paddingTop="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/message_retry"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

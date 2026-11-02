@@ -1,0 +1,21 @@
+# --- Gradle ---
+.gradle/
+build/
+app/build/
+
+# --- IDE ---
+.idea/
+*.iml
+.kotlin/
+
+# --- Android / lokal, maschinen- & nutzerbezogen ---
+local.properties
+keystore.properties
+*.jks
+*.keystore
+
+# --- Projekt-spezifisch ---
+tmp/
+*.log
+.DS_Store
+releases/

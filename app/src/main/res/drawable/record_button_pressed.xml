@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Push-to-talk Button-Hintergrund, GEDRUECKT-Zustand (v1.18).
+     Wird bei ACTION_DOWN hart per setBackgroundResource() gesetzt. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="44dp" />
+    <solid android:color="?attr/accentDark" />
+</shape>
