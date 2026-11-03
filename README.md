@@ -1,5 +1,8 @@
 # HermiVoice
 
+<center><img src="https://git.virdoc.de/michael/HermiVoice/wiki/raw/images/home_main.png" alt="HermiVoice Hauptbildschirm mit Chat" width="300"></center>
+
+
 **English Version below.**
 
 Persönliche Android-App (Kotlin nativ, Sideload) zur Sprachsteuerung des **Hermes-Agent**.
