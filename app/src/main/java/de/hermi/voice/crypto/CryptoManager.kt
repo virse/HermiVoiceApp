@@ -34,6 +34,14 @@ object CryptoManager {
     private const val IV_LENGTH = 12
     private const val GCM_TAG_BITS = 128
 
+    /**
+     * Expliziter Marker für verschlüsselte Werte (Bugfix 1.0.1). Vorher wurde
+     * „ist das verschlüsselt?“ durch einen Decrypt-Versuch beantwortet — teuer und
+     * nach Key-Verlust falsch (Ciphertext wurde dann als Klartext behandelt).
+     * Werte ohne Marker (Altbestand) werden weiterhin per Decrypt-Versuch erkannt.
+     */
+    const val ENC_PREFIX = "enc:v1:"
+
     private fun getOrCreateKey(): SecretKey {
         val ks = KeyStore.getInstance(KEYSTORE).apply { load(null) }
         (ks.getKey(ALIAS, null) as? SecretKey)?.let { return it }
@@ -60,15 +68,17 @@ object CryptoManager {
         val out = ByteArray(iv.size + cipherBytes.size)
         System.arraycopy(iv, 0, out, 0, iv.size)
         System.arraycopy(cipherBytes, 0, out, iv.size, cipherBytes.size)
-        return Base64.encodeToString(out, Base64.NO_WRAP)
+        return ENC_PREFIX + Base64.encodeToString(out, Base64.NO_WRAP)
     }
 
     /**
-     * Entschlüsselt Base64(IV || Ciphertext). Wirft bei zu kurzem Datenblock,
+     * Entschlüsselt Base64(IV || Ciphertext), optional mit [ENC_PREFIX] davor
+     * (Altbestand ohne Marker bleibt lesbar). Wirft bei zu kurzem Datenblock,
      * Manipulation (GCM-Tag) oder fehlendem/anderem Keystore-Key.
      */
     fun decrypt(encoded: String): String {
-        val data = Base64.decode(encoded, Base64.NO_WRAP)
+        val body = if (encoded.startsWith(ENC_PREFIX)) encoded.substring(ENC_PREFIX.length) else encoded
+        val data = Base64.decode(body, Base64.NO_WRAP)
         require(data.size > IV_LENGTH) { "Ciphertext zu kurz" }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(
@@ -80,12 +90,36 @@ object CryptoManager {
         return String(plain, Charsets.UTF_8)
     }
 
-    /** Heuristik: Ist dieser Wert ein (potenziell) verschlüsselter Block? */
-    fun isEncryptedText(value: String): Boolean = value.isNotEmpty() && try {
-        decrypt(value)
-        true
-    } catch (e: Exception) {
-        false
+    /**
+     * Ist dieser Wert ein verschlüsselter Block? Neuwertige Werte tragen den
+     * [ENC_PREFIX] und werden ohne Krypto-Aufwand erkannt; Altbestand ohne Marker
+     * (nicht noch einmal verschlüsseln!) wird weiterhin per Decrypt-Versuch geprüft.
+     */
+    fun isEncryptedText(value: String): Boolean {
+        if (value.isEmpty()) return false
+        if (value.startsWith(ENC_PREFIX)) return true
+        return try {
+            decrypt(value)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * true, wenn der Wert als verschlüsselt markiert ist, aber nicht mehr
+     * entschlüsselbar (Keystore-Key weg, z. B. nach Werksreset/Restore). Damit kann
+     * die UI einmalig einen Hinweis zeigen, statt die App still „unconfigured“ wirken
+     * zu lassen.
+     */
+    fun isUnreadableCiphertext(value: String): Boolean {
+        if (!value.startsWith(ENC_PREFIX)) return false
+        return try {
+            decrypt(value)
+            false
+        } catch (e: Exception) {
+            true
+        }
     }
 
     // ── Transportverschlüsselung (Config-Backup) ─────────────────────────

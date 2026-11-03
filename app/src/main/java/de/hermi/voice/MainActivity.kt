@@ -133,8 +133,14 @@ class MainActivity : AppCompatActivity() {
     // Zielgröße (px) für eigene Avatar-Bilder; reicht für die kleinen Avatare
     // im Chat aus und bleibt speicherschonend.
     private val AVATAR_PX = 160
-    private var recognizer: SherpaRecognizer? = null
+    // @Volatile: wird im Hintergrund-Thread geladen/freigegeben und im UI-Thread
+    // gelesen (Bugfix 1.0.1: Modellaufbau läuft nicht mehr auf dem Main-Thread).
+    @Volatile private var recognizer: SherpaRecognizer? = null
+    /** Läuft gerade ein Modell-Aufbau im Hintergrund? Verhindert parallele Ladevorgänge. */
+    @Volatile private var recognizerLoading = false
     @Volatile private var recording = false
+    /** Einmal-Hinweis „Zugangsdaten nicht mehr entschlüsselbar“ (Bugfix 1.0.1). */
+    private var secretWarningShown = false
 
     // Haptik-Feedback (Vibration) beim Aufnahme-Start/Stopp. VIBRATE ist eine
     // Normal-Disclosure-Permission, kein Runtime-Prompt — via Manifest erteilt.
@@ -338,6 +344,14 @@ class MainActivity : AppCompatActivity() {
             micPermission.launch(Manifest.permission.RECORD_AUDIO)
         }
 
+        // Bugfix 1.0.1: Einmaliger Hinweis, wenn gespeicherte Zugangsdaten nicht
+        // mehr entschlüsselbar sind (Keystore-Key weg, z. B. nach Restore). Sonst
+        // wirkt die App wie „nicht konfiguriert“, obwohl ein Backup existiert.
+        if (!secretWarningShown && config.detectUnreadableSecrets()) {
+            secretWarningShown = true
+            addSystemNotice(getString(R.string.keys_unreadable_notice))
+        }
+
         // Geteilten Text von der Share-Schleuse („Senden mit/Teilen mit") in das
         // Eingabefeld übernehmen, falls die App kalt über einen Share-Intent
         // gestartet wurde (Rest: kommt über onNewIntent bei laufender App).
@@ -449,8 +463,8 @@ class MainActivity : AppCompatActivity() {
         // zweiten Download starten. Der laufende Thread meldet sich selbst.
         if (ModelManager.isDownloading()) return
         if (ModelManager.isInstalled(this, activeSttLanguage)) {
+            // Setzt READY bzw. MODEL_LOADING selbst (Aufbau läuft im Hintergrund).
             ensureRecognizer()
-            if (!recording) setState(State.READY)
             maybeCheckModelUpdate()
         } else {
             setState(State.MODEL_MISSING)
@@ -502,8 +516,8 @@ class MainActivity : AppCompatActivity() {
                     if (!installed) allInstalled = false
                 }
                 if (allInstalled) runOnUiThread {
+                    // Aufbau im Hintergrund; Status (LOADING → READY) setzt ensureRecognizer.
                     ensureRecognizer()
-                    setState(State.READY)
                 }
             } catch (e: Exception) {
                 android.util.Log.e("HermiVoice", "Modell-Download fehlgeschlagen", e)
@@ -586,9 +600,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 )
                 if (installed) runOnUiThread {
-                    // Neues Modell aktivieren: alten Recognizer freigeben und neu laden.
-                    recognizer?.release()
-                    recognizer = null
+                    // Neues Modell aktivieren: ensureRecognizer gibt den alten Recognizer
+                    // unter Lock frei und lädt den neuen im Hintergrund-Thread.
                     ensureRecognizer()
                     Toast.makeText(this, R.string.model_updated, Toast.LENGTH_SHORT).show()
                 }
@@ -663,22 +676,67 @@ class MainActivity : AppCompatActivity() {
     private val activeSttLanguage: String
         get() = config.activeSttLanguage
 
-    private fun ensureRecognizer() {
+    /**
+     * Stellt sicher, dass ein Recognizer für die aktive Sprache geladen ist.
+     *
+     * Bugfix 1.0.1: Das Laden der ONNX-Modelle dauert Größenordnung Sekunden und
+     * lief früher auf dem UI-Thread (ANR-Risiko bei onResume/Sprachwechsel). Jetzt
+     * läuft es im Hintergrund-Thread; die UI zeigt „Modell wird geladen“. Ist der
+     * Recognizer bereits passend geladen, wird sofort (ohne Thread) auf READY gesetzt.
+     * [onReady] läuft auf dem UI-Thread, sobald der Recognizer benutzbar ist.
+     */
+    private fun ensureRecognizer(onReady: (() -> Unit)? = null) {
         val lang = activeSttLanguage
         val installed = ModelManager.installedVersion(this, lang)
-        if (recognizer == null) {
-            recognizer = SherpaRecognizer(ModelManager.modelDir(this, lang))
-        } else if (installed != loadedModelVersion || lang != loadedModelLang) {
-            // Die installierte Modellversion ODER die aktive Sprache hat sich
-            // geändert (Update über die Einstellungen bzw. Sprachwechsel) —
-            // alten Recognizer freigeben und neu laden, sonst liefe das alte
-            // Modell (und die alte Sprache) im Speicher weiter.
-            recognizer?.release()
-            recognizer = null
-            recognizer = SherpaRecognizer(ModelManager.modelDir(this, lang))
+        if (recognizer != null && installed == loadedModelVersion && lang == loadedModelLang) {
+            if (!recording) setState(State.READY)
+            onReady?.let { runOnUiThread(it) }
+            return
         }
-        loadedModelVersion = installed
-        loadedModelLang = lang
+        // Ein laufender Aufbau deckt diesen Wunsch mit ab (ein zweiter Thread würde
+        // nur das gleiche Modell doppelt über die native Bibliothek laden).
+        if (recognizerLoading) return
+        recognizerLoading = true
+        if (!recording) setState(State.MODEL_LOADING)
+        thread(name = "hermi-model-load") {
+            try {
+                val loaded = synchronized(recognizerLock) {
+                    // Activity läuft schon ab: nicht mehr in native Objekte starten.
+                    if (recognizerReleased || isFinishing || isDestroyed) return@synchronized false
+                    // Die installierte Modellversion ODER die aktive Sprache hat sich
+                    // geändert (Update über die Einstellungen bzw. Sprachwechsel) —
+                    // alten Recognizer freigeben und neu laden, sonst liefe das alte
+                    // Modell (und die alte Sprache) im Speicher weiter.
+                    try { recognizer?.release() } catch (_: Exception) {}
+                    recognizer = null
+                    recognizer = SherpaRecognizer(ModelManager.modelDir(this, lang))
+                    loadedModelVersion = installed
+                    loadedModelLang = lang
+                    true
+                }
+                if (loaded) {
+                    android.util.Log.i("HermiVoice", "STT-Modell geladen: $lang (Version $installed)")
+                    runOnUiThread {
+                        if (!recording) setState(State.READY)
+                        onReady?.invoke()
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("HermiVoice", "STT-Modell laden fehlgeschlagen", e)
+                runOnUiThread {
+                    if (!isFinishing && !isDestroyed) {
+                        setState(State.ERROR)
+                        addMessage(
+                            isUser = false,
+                            label = getString(R.string.app_name),
+                            text = getString(R.string.error_recognition_failed, e.message ?: "?")
+                        )
+                    }
+                }
+            } finally {
+                recognizerLoading = false
+            }
+        }
     }
 
     /** Spiele einen kurzen Vibrationspuls ab, sofern Haptik aktiv ist. Der Puls
@@ -705,7 +763,13 @@ class MainActivity : AppCompatActivity() {
             micPermission.launch(Manifest.permission.RECORD_AUDIO)
             return
         }
-        val rec = recognizer ?: return
+        val rec = recognizer
+        if (rec == null) {
+            // Modell wird gerade im Hintergrund geladen (Bugfix 1.0.1): nicht still
+            // ignorieren, sondern kurz informieren.
+            if (recognizerLoading) addSystemNotice(getString(R.string.model_loading_notice))
+            return
+        }
         if (!config.isConfigured()) {
             setState(State.ERROR)
             addMessage(isUser = false, label = getString(R.string.app_name), text = getString(R.string.no_token))
@@ -732,22 +796,32 @@ class MainActivity : AppCompatActivity() {
         try {
             audioSource.start(
                 onSamples = { samples ->
-                    try {
-                        recRef.feed(stream, samples)
-                        if (recording) {
-                            val partial = recRef.partialResult(stream)
-                            if (partial.isNotBlank()) {
-                                runOnUiThread { liveText?.text = partial }
+                    // Bugfix 1.0.1: feed()/partialResult() greifen auf native
+                    // sherpa-onnx-Objekte zu. Freigegeben werden Recognizer und Stream
+                    // unter recognizerLock (Erkennungs-Ende, onDestroy) — deshalb laufen
+                    // die nativen Aufrufe ebenfalls unter diesem Lock. Der Guard
+                    // verhindert zusätzlich den Zugriff auf einen bereits freigegebenen
+                    // Stream (streamRef wird beim release auf null gesetzt).
+                    var partial: String? = null
+                    synchronized(recognizerLock) {
+                        if (!recognizerReleased && streamRef === stream) {
+                            try {
+                                recRef.feed(stream, samples)
+                                if (recording) {
+                                    val p = recRef.partialResult(stream)
+                                    if (p.isNotBlank()) partial = p
+                                }
+                            } catch (e: Exception) {
+                                // Stream nach Stop kann kurz noch Samples liefern — ignorieren.
+                                // JEDE andere Exception loggen, damit stillschweigende Fehler
+                                // (z.B. Native/STM-Fehler) nicht unsichtbar bleiben.
+                                if (recording) {
+                                    android.util.Log.e("HermiVoice", "audio sample fehler", e)
+                                }
                             }
                         }
-                    } catch (e: Exception) {
-                        // Stream nach Stop kann kurz noch Samples liefern — ignorieren.
-                        // JEDE andere Exception loggen, damit stillschweigende Fehler
-                        // (z.B. Native/STM-Fehler) nicht unsichtbar bleiben.
-                        if (recording) {
-                            android.util.Log.e("HermiVoice", "audio sample fehler", e)
-                        }
                     }
+                    partial?.let { p -> runOnUiThread { liveText?.text = p } }
                 },
                 onAmplitude = { amp ->
                     // Nur waehrend der AKTIVEN Aufnahme pulsieren lassen. Der Audio-Tail
@@ -870,6 +944,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendText(text: String, userBubble: View? = null, fromVoice: Boolean = false) {
+        // Bugfix 1.0.1: Defense-in-Depth gegen parallele Streams. Der UI-Button ist
+        // bereits geschützt, aber sendText ist auch programmatisch erreichbar (Sprache,
+        // Share). Ein zweiter Stream würde activeStreamCancel/activeStreamSessionId
+        // überschreiben und die Historie (nicht thread-sichere MutableList) parallel
+        // beschreiben — deshalb hier ablehnen statt still zu starten.
+        if (isStreaming()) {
+            android.util.Log.w("HermiVoice", "sendText abgelehnt: es läuft bereits eine Antwort")
+            addSystemNotice(getString(R.string.answer_in_progress_notice))
+            return
+        }
         // Sende-Konfiguration des aktiven Bots (Standard-Agent → globale Werte)
         // hier im UI-Thread als Schnappschuss bestimmen; der Hintergrund-Thread
         // liest ausschließlich diese snapshot (activeBot ist ein UI-Feld).
@@ -3115,7 +3199,10 @@ class MainActivity : AppCompatActivity() {
         SENDING(R.string.state_sending, R.color.state_sending),
         SENT(R.string.state_sent, R.color.state_sent),
         ERROR(R.string.state_error, R.color.state_error),
-        MODEL_MISSING(R.string.model_missing, R.color.state_recognizing);
+        MODEL_MISSING(R.string.model_missing, R.color.state_recognizing),
+        // Bugfix 1.0.1: Modell wird im Hintergrund geladen (kein ANR mehr auf dem
+        // UI-Thread) — der Nutzer sieht, warum die Aufnahme noch nicht bereit ist.
+        MODEL_LOADING(R.string.model_loading, R.color.state_recognizing);
 
         fun label(ctx: MainActivity): String = ctx.getString(labelRes)
         fun color(ctx: MainActivity): Int =

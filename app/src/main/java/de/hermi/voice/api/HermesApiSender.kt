@@ -8,6 +8,9 @@ import java.io.BufferedReader
 import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Timer
+import java.util.TimerTask
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Sendet transkribierten Text direkt an den OpenAI-kompatiblen Hermes-API-Server
@@ -52,6 +55,51 @@ object HermesApiSender {
     /** Großzügiges Timeout pro Stream-Read NACH dem ersten Token. Deckt lange
      *  Denkphasen (Reasoning) ab, bei denen zwischen Tokens viel Zeit vergeht. */
     private const val STREAM_READ_TIMEOUT_MS = 300_000L
+
+    /** Mindest-Socket-Timeout eines Streams (alter fester Wert, damit sich kurze
+     *  konfigurierte Stream-Timeouts nicht verschärfen). */
+    private const val MIN_SOCKET_READ_TIMEOUT_MS = 120_000L
+
+    /**
+     * Socket-Read-Timeout für einen Stream. MUSS vor dem Verbindungsaufbau gesetzt
+     * werden: eine Änderung an `HttpURLConnection.readTimeout` NACH dem Öffnen des
+     * Streams bleibt wirkungslos (Bugfix 1.0.1, vorher wurde der Timeout genau dort
+     * gesetzt, wodurch die Einstellung „Antwort-Timeout“ nie griff). Die eigentlichen
+     * Fristen werden deshalb im Leseloop als Deadline geprüft; der Socket-Timeout ist
+     * nur die harte Obergrenze. +5 s, damit die Deadline zuerst greift.
+     */
+    private fun socketReadTimeoutMs(firstTokenMs: Long, streamMs: Long): Int =
+        (maxOf(firstTokenMs, streamMs, MIN_SOCKET_READ_TIMEOUT_MS) + 5_000L)
+            .coerceAtMost(Int.MAX_VALUE.toLong())
+            .toInt()
+
+    /**
+     * Bricht die Verbindung hart ab, wenn innerhalb von [timeoutMs] kein erstes Token
+     * eingetroffen ist. Nötig, weil der Socket-Timeout jetzt auf dem Stream-Timeout
+     * liegt (bis 15 min): ohne Watchdog würde ein stummer Server die First-Token-Frist
+     * nur dann einhalten, wenn er Keepalive-Frames schickt. `disconnect()` ist derselbe
+     * Mechanismus, der auch der Stopp-Button benutzt, um ein blockiertes readLine zu lösen.
+     */
+    private fun armFirstTokenWatchdog(
+        conn: HttpURLConnection,
+        firstTokenReceived: AtomicBoolean,
+        timedOut: AtomicBoolean,
+        timeoutMs: Long
+    ): Timer {
+        val timer = Timer("hermi-first-token-watchdog", true)
+        timer.schedule(
+            object : TimerTask() {
+                override fun run() {
+                    if (!firstTokenReceived.get()) {
+                        timedOut.set(true)
+                        try { conn.disconnect() } catch (_: Exception) { /* bereits zu */ }
+                    }
+                }
+            },
+            timeoutMs.coerceAtLeast(1L)
+        )
+        return timer
+    }
 
     /**
      * Sendet eine Konversations-Historie als User-/Assistant-Nachrichten an den
@@ -208,7 +256,9 @@ object HermesApiSender {
         return try {
             conn.requestMethod = "POST"
             conn.connectTimeout = 30_000
-            conn.readTimeout = 120_000
+            // Bugfix 1.0.1: Timeout VOR dem Verbindungsaufbau setzen — nach dem
+            // Öffnen des Streams wirkt eine Änderung nicht mehr.
+            conn.readTimeout = socketReadTimeoutMs(firstTokenTimeoutMs, streamTimeoutMs)
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Accept", "text/event-stream")
@@ -241,7 +291,15 @@ object HermesApiSender {
             val reader = conn.inputStream.bufferedReader()
             // Bis zum ersten Token gilt das kurze First-Token-Timeout, danach das
             // großzügige Stream-Timeout für längere Denk-/Antwortphasen.
-            var firstTokenReceived = false
+            // AtomicBoolean, weil der Watchdog-Thread das Flag ebenfalls liest.
+            val firstTokenReceived = AtomicBoolean(false)
+            val firstTokenTimedOut = AtomicBoolean(false)
+            val watchdog = armFirstTokenWatchdog(
+                conn, firstTokenReceived, firstTokenTimedOut, firstTokenTimeoutMs
+            )
+            // Zeitpunkt des letzten empfangenen Frames: Grundlage für das
+            // Stream-Timeout der Folgephase (Keepalives zählen als Lebenszeichen).
+            var lastActivity = System.currentTimeMillis()
             // true, sobald der Stream REGULÄR endete ([DONE] oder finish_reason). Endet die
             // Verbindung ohne eines von beiden (EOF mitten im Text, Proxy-Abbruch, Netz
             // weg), ist die Antwort abgeschnitten und darf nicht als Erfolg gelten —
@@ -262,18 +320,25 @@ object HermesApiSender {
                     }
                     // Kein Token binnen der First-Token-Frist -> Fallback auslösen,
                     // auch wenn der Server nur leere Keepalives liefert. Das gilt nur
-                    // bis zum ERSTEN Token; danach greift wieder das Stream-Timeout.
-                    if (!firstTokenReceived &&
-                        System.currentTimeMillis() > firstTokenDeadline
-                    ) {
+                    // bis zum ERSTEN Token; danach greift das Stream-Timeout.
+                    val now = System.currentTimeMillis()
+                    if (!firstTokenReceived.get() && now > firstTokenDeadline) {
                         throw HermesApiException(
                             "Keine Antwort vom Modell innerhalb von " +
                                 "${firstTokenTimeoutMs / 1000}s"
                         )
                     }
-                    conn.readTimeout =
-                        if (firstTokenReceived) streamTimeoutMs.toInt() else firstTokenTimeoutMs.toInt()
+                    // Bugfix 1.0.1: Frist der Folgephase. Die frühere Zuweisung von
+                    // conn.readTimeout an dieser Stelle blieb nach dem Öffnen des
+                    // Streams wirkungslos — die konfigurierte Antwortzeit wird jetzt
+                    // hier als Deadline geprüft (Keepalives halten sie am Leben).
+                    if (firstTokenReceived.get() && now - lastActivity > streamTimeoutMs) {
+                        throw HermesApiException(
+                            "Antwort-Stream seit ${streamTimeoutMs / 1000}s ohne neues Token abgebrochen"
+                        )
+                    }
                     val line = reader.readLine() ?: break
+                    lastActivity = System.currentTimeMillis()
                     val trimmed = line.trim()
                     // Keepalive-Kommentar ("") bzw. ": keepalive" überspringen.
                     if (trimmed.isEmpty() || trimmed.startsWith(":")) continue
@@ -308,7 +373,7 @@ object HermesApiSender {
                     if (delta.has("reasoning_content") && !delta.isNull("reasoning_content")) {
                         val r = delta.optString("reasoning_content")
                         if (r.isNotEmpty()) {
-                            firstTokenReceived = true
+                            firstTokenReceived.set(true)
                             reasoning.append(r)
                             onReasoning(r)
                         }
@@ -316,7 +381,7 @@ object HermesApiSender {
                     if (delta.has("content") && !delta.isNull("content")) {
                         val c = delta.optString("content")
                         if (c.isNotEmpty()) {
-                            firstTokenReceived = true
+                            firstTokenReceived.set(true)
                             result.append(c)
                             onDelta(c)
                         }
@@ -346,7 +411,18 @@ object HermesApiSender {
                         "Stream vorzeitig beendet (Antwort unvollständig, ${result.length} Zeichen empfangen)"
                     )
                 }
+            } catch (e: Exception) {
+                // Der First-Token-Watchdog trennt die Verbindung, wenn kein Token
+                // kommt — das äußert sich als IOException/„Socket closed“. Nach außen
+                // ein klarer Timeout-Fehler, damit der Fallback-Modellwechsel greift.
+                if (firstTokenTimedOut.get() && !firstTokenReceived.get()) {
+                    throw HermesApiException(
+                        "Keine Antwort vom Modell innerhalb von ${firstTokenTimeoutMs / 1000}s", e
+                    )
+                }
+                throw e
             } finally {
+                watchdog.cancel()
                 reader.close()
             }
             result.toString()
@@ -493,7 +569,8 @@ object HermesApiSender {
         return try {
             conn.requestMethod = "POST"
             conn.connectTimeout = 30_000
-            conn.readTimeout = 120_000
+            // Bugfix 1.0.1: Timeout VOR dem Verbindungsaufbau setzen (s. sendMessageStream).
+            conn.readTimeout = socketReadTimeoutMs(firstTokenTimeoutMs, streamTimeoutMs)
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Accept", "text/event-stream")
@@ -512,7 +589,12 @@ object HermesApiSender {
             val result = StringBuilder()
             val reasoning = StringBuilder()
             val reader = conn.inputStream.bufferedReader()
-            var firstTokenReceived = false
+            val firstTokenReceived = AtomicBoolean(false)
+            val firstTokenTimedOut = AtomicBoolean(false)
+            val watchdog = armFirstTokenWatchdog(
+                conn, firstTokenReceived, firstTokenTimedOut, firstTokenTimeoutMs
+            )
+            var lastActivity = System.currentTimeMillis()
             var completed = false
             val firstTokenDeadline = System.currentTimeMillis() + firstTokenTimeoutMs
             try {
@@ -520,17 +602,21 @@ object HermesApiSender {
                     if (cancellationToken?.cancelled == true) {
                         throw HermesApiException("Antwort durch Nutzer abgebrochen")
                     }
-                    if (!firstTokenReceived &&
-                        System.currentTimeMillis() > firstTokenDeadline
-                    ) {
+                    val now = System.currentTimeMillis()
+                    if (!firstTokenReceived.get() && now > firstTokenDeadline) {
                         throw HermesApiException(
                             "Keine Antwort vom Modell innerhalb von " +
                                 "${firstTokenTimeoutMs / 1000}s"
                         )
                     }
-                    conn.readTimeout =
-                        if (firstTokenReceived) streamTimeoutMs.toInt() else firstTokenTimeoutMs.toInt()
+                    // Bugfix 1.0.1: Frist der Folgephase (s. sendMessageStream).
+                    if (firstTokenReceived.get() && now - lastActivity > streamTimeoutMs) {
+                        throw HermesApiException(
+                            "Antwort-Stream seit ${streamTimeoutMs / 1000}s ohne neues Token abgebrochen"
+                        )
+                    }
                     val line = reader.readLine() ?: break
+                    lastActivity = System.currentTimeMillis()
                     val trimmed = line.trim()
                     if (trimmed.isEmpty() || trimmed.startsWith(":")) continue
                     if (!trimmed.startsWith("data:")) continue
@@ -560,7 +646,7 @@ object HermesApiSender {
                     if (delta.has("reasoning_content") && !delta.isNull("reasoning_content")) {
                         val r = delta.optString("reasoning_content")
                         if (r.isNotEmpty()) {
-                            firstTokenReceived = true
+                            firstTokenReceived.set(true)
                             reasoning.append(r)
                             onReasoning(r)
                         }
@@ -568,7 +654,7 @@ object HermesApiSender {
                     if (delta.has("content") && !delta.isNull("content")) {
                         val c = delta.optString("content")
                         if (c.isNotEmpty()) {
-                            firstTokenReceived = true
+                            firstTokenReceived.set(true)
                             result.append(c)
                             onDelta(c)
                         }
@@ -587,7 +673,15 @@ object HermesApiSender {
                         "Stream vorzeitig beendet (Antwort unvollständig, ${result.length} Zeichen empfangen)"
                     )
                 }
+            } catch (e: Exception) {
+                if (firstTokenTimedOut.get() && !firstTokenReceived.get()) {
+                    throw HermesApiException(
+                        "Keine Antwort vom Anbieter innerhalb von ${firstTokenTimeoutMs / 1000}s", e
+                    )
+                }
+                throw e
             } finally {
+                watchdog.cancel()
                 reader.close()
             }
             // Leere Antwort (kein Text-Content): tritt bei einem Server-Tool-Aufruf

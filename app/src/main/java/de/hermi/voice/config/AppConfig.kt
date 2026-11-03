@@ -23,6 +23,28 @@ class AppConfig(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("hermi_config", Context.MODE_PRIVATE)
 
+    // Bugfix 1.0.1: merkt sich, dass ein gespeicherter Secret-Wert nicht mehr
+    // entschlüsselbar war (Keystore-Key weg, z. B. nach Restore/Werksreset). Die UI
+    // fragt das einmalig ab und zeigt einen Hinweis, statt still "nicht konfiguriert"
+    // zu wirken, obwohl ein Backup existiert.
+    private val unreadableSecretSeen = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /** true, sobald mindestens ein Secret nicht mehr entschlüsselbar war. */
+    fun wasSecretUnreadable(): Boolean = unreadableSecretSeen.get()
+
+    /**
+     * Prüft beim App-Start alle gespeicherten Secrets (globaler Key, Bot-Keys,
+     * Cloud-Keys) auf Entschlüsselbarkeit. Die Getter setzen das Warn-Flag selbst.
+     * Liefert true, wenn mindestens ein Wert nicht mehr lesbar ist — dann zeigt die
+     * UI einmalig einen Hinweis statt still „nicht konfiguriert“ zu wirken.
+     */
+    fun detectUnreadableSecrets(): Boolean {
+        apiKey
+        getBots()
+        getCloudProviders()
+        return unreadableSecretSeen.get()
+    }
+
     init {
         // Bestehende Bestandsdaten (Klartext aus Versionen vor 1.21) einmalig verschlüsseln.
         migrateSecretsIfNeeded()
@@ -59,7 +81,10 @@ class AppConfig(context: Context) {
             val raw = prefs.getString(KEY_API_KEY, "") ?: ""
             if (raw.isEmpty()) "" else CryptoManager.decrypt(raw)
         } catch (e: Exception) {
-            "" // nicht (mehr) entschlüsselbar (anderer Keystore z. B.) → als leer behandeln
+            // Nicht (mehr) entschlüsselbar (anderer Keystore z. B.) → als leer
+            // behandeln, aber für den UI-Hinweis vermerken.
+            unreadableSecretSeen.set(true)
+            ""
         }
         set(value) {
             val v = value.trim()
@@ -409,7 +434,10 @@ class AppConfig(context: Context) {
             try {
                 CryptoManager.decrypt(raw)
             } catch (e: Exception) {
-                "" // nicht (mehr) entschlüsselbar → als leer behandeln
+                // Nicht (mehr) entschlüsselbar → als leer behandeln, aber für den
+                // einmaligen UI-Hinweis vermerken (Bugfix 1.0.1).
+                unreadableSecretSeen.set(true)
+                ""
             }
 
     /** Liest die aktivierten Tool-Slugs eines Cloud-Providers aus dem JSON-Array

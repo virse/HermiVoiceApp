@@ -329,4 +329,10 @@
     <string name="language_mode_en">English</string>
     <string name="language_saved">Sprache gespeichert.</string>
     <string name="settings_cat_language_desc">Oberflächensprache der App (Automatisch, Deutsch oder English)</string>
+
+    <!-- ── Bugfix-Release 1.0.1 ── -->
+    <string name="model_loading">Modell wird geladen…</string>
+    <string name="model_loading_notice">Das Sprachmodell wird noch geladen — bitte einen Moment warten.</string>
+    <string name="keys_unreadable_notice">Gespeicherte Zugangsdaten konnten nicht mehr entschlüsselt werden (z. B. nach Wiederherstellung auf einem anderen Gerät). Bitte API-Key neu eintragen oder ein Backup importieren.</string>
+    <string name="answer_in_progress_notice">Es läuft noch eine Antwort — bitte kurz warten oder sie abbrechen.</string>
 </resources>

@@ -329,4 +329,10 @@
     <string name="language_mode_en">English</string>
     <string name="language_saved">Language saved.</string>
     <string name="settings_cat_language_desc">Interface language of the app (Automatic, German or English)</string>
+
+    <!-- ── Bugfix release 1.0.1 ── -->
+    <string name="model_loading">Loading model…</string>
+    <string name="model_loading_notice">The speech model is still loading — please wait a moment.</string>
+    <string name="keys_unreadable_notice">Saved credentials can no longer be decrypted (e.g. after restoring on another device). Please re-enter the API key or import a backup.</string>
+    <string name="answer_in_progress_notice">An answer is still running — please wait or stop it.</string>
 </resources>

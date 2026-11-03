@@ -22,6 +22,9 @@ class SpeechOutput(context: Context) {
 
     @Volatile private var initStatus = TextToSpeech.ERROR
     @Volatile private var initCalled = false
+    /** Nach [shutdown] wird nichts mehr gepuffert — es kommt keine Init mehr, an die
+     *  der Puffer ausgeliefert werden könnte (Bugfix 1.0.1). */
+    @Volatile private var shutDown = false
     /** Während der Engine-Init gepufferte Nachricht (wird nach SUCCESS sofort gesprochen). */
     @Volatile private var pendingText: String? = null
 
@@ -57,6 +60,12 @@ class SpeechOutput(context: Context) {
      * erfolgreicher Init gesprochen (kein stiller Verlust).
      */
     fun speak(text: String) {
+        if (shutDown) {
+            // Nach shutdown() gibt es keine Engine und keine Init mehr: Puffern würde
+            // den Text dauerhaft hängen lassen (Bugfix 1.0.1).
+            Log.w(TAG, "TTS bereits freigegeben, Ausgabe übersprungen")
+            return
+        }
         if (!initCalled) {
             // Engine-Init läuft noch — Text merken und nachholen.
             pendingText = text
@@ -117,6 +126,7 @@ class SpeechOutput(context: Context) {
     /** Gibt die Engine frei (z. B. im onDestroy der Activity). */
     fun shutdown() {
         synchronized(this) {
+            shutDown = true
             pendingText = null
             tts?.shutdown()
             tts = null

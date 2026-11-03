@@ -52,6 +52,14 @@ class MicrophoneSource : AudioSource {
     // Start-Wert true: Ohne gestartete Aufnahme (oder nach fehlgeschlagenem start())
     // darf stop() nicht bis zum Timeout auf einen Thread warten, den es nie gab.
     @Volatile private var finished = true
+    // Bugfix 1.0.1: genau EIN Wartethread pro Stop. Ein zweiter stop()-Aufruf
+    // (z. B. onDestroy, während die Erkennung noch läuft) hängt seinen Callback an
+    // denselben Wartevorgang an, statt einen zweiten Thread zu starten — vorher
+    // konnten zwei Wartethreads zwei Callbacks auslösen und der zweite lief auf
+    // einem noch nicht vollständig geleerten Stream.
+    private val stopLock = Any()
+    private val pendingStops = mutableListOf<() -> Unit>()
+    private var stopWaiterActive = false
 
     override fun start(onSamples: (FloatArray) -> Unit, onAmplitude: (Float) -> Unit) {
         if (audioRecord != null) return
@@ -194,6 +202,20 @@ class MicrophoneSource : AudioSource {
 
     override fun stop(onFinished: () -> Unit) {
         recording = false
+        // Aufnahme-Thread ist längst fertig (kein Start gelaufen oder Stop schon
+        // abgeschlossen): sofort melden, statt einen Wartethread für einen bereits
+        // eingetretenen Zustand zu starten.
+        if (finished) {
+            onFinished()
+            return
+        }
+        val startWaiter: Boolean
+        synchronized(stopLock) {
+            pendingStops += onFinished
+            startWaiter = !stopWaiterActive
+            stopWaiterActive = startWaiter
+        }
+        if (!startWaiter) return // läuft schon — dieser Callback wird mitbedient
         thread(name = "hermi-audio-stop") {
             // Warten bis der Aufnahme-Thread den Record freigegeben hat.
             // Budget muss die Tail-Obergrenze (8 s) + Decoder-Nachlauf abdecken.
@@ -205,7 +227,28 @@ class MicrophoneSource : AudioSource {
                 Thread.sleep(20)
                 wait++
             }
-            onFinished()
+            val timedOut = !finished
+            val callbacks = synchronized(stopLock) {
+                stopWaiterActive = false
+                pendingStops.toList().also { pendingStops.clear() }
+            }
+            if (timedOut) {
+                // Bugfix 1.0.1: Kein stiller Erfolg mehr — aber den Callback
+                // trotzdem auslösen, sonst bliebe die UI in RECOGNIZING hängen.
+                Log.e(
+                    TAG,
+                    "Aufnahme-Thread nach 12 s nicht beendet (Tail evtl. unvollständig) — " +
+                        "Erkennung wird trotzdem gestartet"
+                )
+            }
+            for (cb in callbacks) {
+                try {
+                    cb()
+                } catch (e: Exception) {
+                    // Ein fehlerhafter Callback darf die übrigen nicht blockieren.
+                    Log.e(TAG, "onFinished-Callback fehlgeschlagen", e)
+                }
+            }
         }
     }
 }

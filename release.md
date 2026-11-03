@@ -7,9 +7,11 @@ Archiv-Repo `HermiVoice-legacy`.
 ## 1. Version anpassen
 
 - App-Version und `versionCode` werden **zentral in `app/build.gradle.kts`** gepflegt.
-- Update-Installation über eine bestehende Version erfordert denselben Signaturschlüssel;
-  bei identischem `versionCode` ist die neue APK direkt als Update installierbar
-  (Beispiel: 1.0.x über 1.0.0 — identischer versionCode 1, gleicher Keystore `release.jks`).
+- Update-Installation über eine bestehende Version erfordert denselben Signaturschlüssel
+  (`release.jks`); der `versionCode` muss dabei **höher** sein als in der installierten
+  Version (Beispiel: 1.0.1 mit versionCode 2 über 1.0.0 mit versionCode 1).
+  Gleicher `versionCode` bei geändertem Inhalt führt zu `INSTALL_FAILED_ALREADY_EXISTS`
+  bzw. dazu, dass Android das Update gar nicht erst anbietet.
 
 ## 2. Voraussetzungen
 
@@ -72,8 +74,9 @@ English version of the guide above.
 
 1. **Version bump** — app version and `versionCode` are maintained centrally in
    `app/build.gradle.kts`. Updating over an existing install requires the same signing
-   key; with an identical `versionCode` the new APK installs directly as an update
-   (e.g. 1.0.x over 1.0.0 — same versionCode 1, same keystore `release.jks`).
+   key (`release.jks`), and the `versionCode` must be **higher** than the installed one
+   (e.g. 1.0.1 with versionCode 2 over 1.0.0 with versionCode 1). An identical
+   `versionCode` with changed content is not offered as an update by Android.
 
 2. **Prerequisites** — JDK 21, Android SDK, Gradle 8.x, `ANDROID_HOME` set.
    The local keystore `release.jks` and `keystore.properties` are **not in the repo**
