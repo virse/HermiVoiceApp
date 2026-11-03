@@ -229,17 +229,6 @@ object ModelManager {
         onPhase: (Phase) -> Unit
     ): Boolean {
         val resolved = resolveLang(lang)
-
-        // Defensive Pfad-Härtung: modelName stammt beim Update aus der
-        // GitHub-Release-API (Asset-Name). Erlaubt sind nur alphanumerische
-        // Zeichen, Punkt, '_' und '-'; "/", "\" und ".." werden so abgelehnt,
-        // bevor der Wert in den Dateinamen fließt. MUSS vor dem Setzen von
-        // active=true liegen — ein Throw nach der Sperre ließe active=true
-        // stehen und blockierte jeden weiteren Download dauerhaft.
-        if (!modelName.matches(Regex("^[A-Za-z0-9][A-Za-z0-9._-]*$"))) {
-            throw java.io.IOException("Abgelehnter Modellname: $modelName")
-        }
-
         synchronized(lock) {
             if (active) return false
             active = true
@@ -247,7 +236,10 @@ object ModelManager {
         // Pro Versuch eindeutige Datei/Ordner: kein geteilter Zustand, den
         // ein zweiter Lauf oder ein früherer finally-Block zerstören könnte.
         val nonce = System.nanoTime()
-        val tarFile = File(context.cacheDir, "$modelName-$nonce.tar.bz2")
+        // Dateiname bewusst OHNE modelName: nur nonce + Literal. So hängt der
+        // Pfad von keiner externen Eingabe ab (CodeQL path-injection-Sink ist
+        // dann unabhängig vom Modellnamen); modelName bleibt nur für Meldungen.
+        val tarFile = File(context.cacheDir, "model-$nonce.tar.bz2")
         val extractDir = File(context.cacheDir, "models-extract-$nonce")
         // SOFORT herunterladen melden — BEVOR der (bis zu 30 s dauernde)
         // Verbindungsaufbau in fetch() blockiert. Sonst bliebe die UI die ganze
