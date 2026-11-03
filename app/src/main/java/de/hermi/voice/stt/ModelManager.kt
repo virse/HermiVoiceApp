@@ -229,6 +229,17 @@ object ModelManager {
         onPhase: (Phase) -> Unit
     ): Boolean {
         val resolved = resolveLang(lang)
+
+        // Defensive Pfad-Härtung: modelName stammt beim Update aus der
+        // GitHub-Release-API (Asset-Name). Erlaubt sind nur alphanumerische
+        // Zeichen, Punkt, '_' und '-'; "/", "\" und ".." werden so abgelehnt,
+        // bevor der Wert in den Dateinamen fließt. MUSS vor dem Setzen von
+        // active=true liegen — ein Throw nach der Sperre ließe active=true
+        // stehen und blockierte jeden weiteren Download dauerhaft.
+        if (!modelName.matches(Regex("^[A-Za-z0-9][A-Za-z0-9._-]*$"))) {
+            throw java.io.IOException("Abgelehnter Modellname: $modelName")
+        }
+
         synchronized(lock) {
             if (active) return false
             active = true
