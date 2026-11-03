@@ -5,7 +5,8 @@
 
 **English Version below.**
 
-Open Source-Android-App (Kotlin nativ, Sideload) zur Sprachsteuerung des **Hermes-Agent**.
+Open Source Android-App (Kotlin nativ, Sideload) zur Sprachsteuerung des **Hermes-Agent** und
+Cloud-Modellen (OpenAI-compatible API).
 Push-to-talk: Taste halten, sprechen, loslassen → Transkription (deutsch oder englisch, je
 UI-Sprache) **vollständig offline** (sherpa-onnx, Zipformer-Kroko-Modell) → Nachricht an die
 Hermes-API → Chat-Antwort in der App.
@@ -124,9 +125,9 @@ Apache License 2.0 — siehe [LICENSE](LICENSE).
 English version of the guide above.
 
 **HermiVoice** is an Open-Source Android app (native Kotlin, sideload) for voice-controlling the
-**Hermes agent**. Push-to-talk: hold the button, speak, release → transcription (German or
-English, following the UI language) **fully offline** (sherpa-onnx, Zipformer-Kroko model) →
-message to the Hermes API → chat answer in the app.
+**Hermes agent** and cloud models (OpenAI-compatible API). Push-to-talk: hold the button, speak, 
+release → transcription (German or English, following the UI language) **fully offline** 
+(sherpa-onnx, Zipformer-Kroko model) → message to the Hermes API → chat answer in the app.
 Besides voice, you can type any message with the **keyboard** – you can switch modes at any
 time (start mode selectable).
 
