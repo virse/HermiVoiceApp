@@ -1,9 +1,9 @@
 {
-  "versionCode": 3,
-  "versionName": "1.0.2",
-  "apkUrl": "https://github.com/virse/HermiVoiceApp/releases/download/v1.0.2/app-release_1.0.2.apk",
-  "sha256": "7e7214df94c9983373bd6e6641a3d46923c2bceb9d13c31c535c3609f0fa46ef",
-  "changelog": "- Neu: Update-Prüfung gegen update.json (manuell und automatisch beim Start, max. alle 24 h)\n- Neu: Update-Download mit SHA-256-Prüfung und Installationsdialog\n- Neu: Einstellungen „Update & Backup“ mit Update-Toggle und Backup an einem Ort\n- Update-Einstellungen werden ins Konfigurations-Backup übernommen\n- Changelog im Update-Dialog wird als Markdown gerendert",
+  "versionCode": 4,
+  "versionName": "1.0.3-test",
+  "apkUrl": "https://github.com/virse/HermiVoiceApp/releases/download/v1.0.3-test/app-release_1.0.3-test.apk",
+  "sha256": "144db4fff90d57d40a005c738e9ef41de687e03ce3bfae27728e85b711da8a9e",
+  "changelog": "- **Test-Update**: Dieser Eintrag prüft den Update-Dialog.\n- Download, SHA-256-Prüfung und Installation werden getestet.\n- Keine echten Änderungen enthalten.",
   "forceUpdate": false,
   "minSupportedVersionCode": 0
 }
