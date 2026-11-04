@@ -3,4 +3,6 @@
      Cache-Verzeichnis ist für Share-Ziele lesbar (temporäre .md-Datei). -->
 <paths>
     <cache-path name="export" path="." />
+    <!-- Ziel von DownloadManager.setDestinationInExternalFilesDir(..., DIRECTORY_DOWNLOADS, ...) -->
+    <external-files-path name="updates" path="Download/" />
 </paths>

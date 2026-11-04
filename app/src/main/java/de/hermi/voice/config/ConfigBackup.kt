@@ -72,6 +72,14 @@ object ConfigBackup {
         root.put("fallback_model", config.fallbackModel)
         root.put("active_bot", config.getActiveBotId())
 
+        // App-Update-Einstellungen (Toggle, weggetippte/erzwungene Version).
+        // Der Zeitstempel der letzten Prüfung wird mit exportiert, beim Import
+        // aber bewusst NICHT übernommen (neues Gerät prüft sofort).
+        root.put("update_auto_check", config.updateAutoCheck)
+        root.put("update_skipped_version", config.updateSkippedVersion)
+        root.put("update_pending_force_version", config.updatePendingForceVersion)
+        root.put("update_last_success_millis", config.updateLastSuccessMillis)
+
         // Secrets: globaler API-Key + jeder Bot-Key transportverschlüsselt.
         root.put("api_key", if (config.apiKey.isEmpty()) ""
             else CryptoManager.encryptWithKey(key, config.apiKey))
@@ -241,6 +249,19 @@ object ConfigBackup {
         if (importedCloud != null) config.saveCloudProviders(importedCloud)
 
         config.setActiveBotId(root.optString("active_bot"))
+
+        // Update-Einstellungen: Toggle und gemerkte Versionen übernehmen.
+        // Der Zeitstempel wird absichtlich auf 0 gesetzt, damit ein frisch
+        // wiederhergestelltes Gerät beim ersten Start sofort prüft, statt bis
+        // zu 24 h zu warten.
+        config.updateAutoCheck = bool("update_auto_check", config.updateAutoCheck)
+        config.updateSkippedVersion = root.optInt("update_skipped_version", config.updateSkippedVersion)
+        config.updatePendingForceVersion = root.optInt("update_pending_force_version", config.updatePendingForceVersion)
+        config.updateLastSuccessMillis = 0L
+        // Transienten Download-/Install-Zustand nicht aus einem Backup übernehmen.
+        config.updateDownloadId = -1L
+        config.updateInstallReady = false
+        config.updateCachedInfoJson = ""
 
         // Favoriten der Modell-Auswahl je Geltungsbereich übernehmen.
         val favs = root.optJSONObject("model_favorites")

@@ -83,6 +83,7 @@ import de.hermi.voice.ui.MarkdownFormatter
 import de.hermi.voice.session.SessionStore
 import de.hermi.voice.stt.ModelManager
 import de.hermi.voice.stt.SherpaRecognizer
+import de.hermi.voice.update.UpdateManager
 import de.hermi.voice.tts.SpeechOutput
 import java.io.File
 import kotlin.concurrent.thread
@@ -431,6 +432,8 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         appInForeground = true
+        // Update-Prüfung (Auto-Check max. alle 24 h, Pflicht-Updates, laufende Downloads).
+        UpdateManager.onAppResume(this)
         // Polling (wieder) starten; der erste Tick nach dem Intervall, danach
         // periodisch. maybePollSync prüft Vordergrund/Sync-Überlappung/Stream.
         pollHandler.removeCallbacks(pollRunnable)

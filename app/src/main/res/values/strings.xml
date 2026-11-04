@@ -335,4 +335,30 @@
     <string name="model_loading_notice">Das Sprachmodell wird noch geladen — bitte einen Moment warten.</string>
     <string name="keys_unreadable_notice">Gespeicherte Zugangsdaten konnten nicht mehr entschlüsselt werden (z. B. nach Wiederherstellung auf einem anderen Gerät). Bitte API-Key neu eintragen oder ein Backup importieren.</string>
     <string name="answer_in_progress_notice">Es läuft noch eine Antwort — bitte kurz warten oder sie abbrechen.</string>
+
+    <!-- ── Update & Backup ── -->
+    <string name="update_backup_section_title">Update &amp; Backup</string>
+    <string name="settings_cat_update_backup_desc">App-Updates prüfen; verschlüsselte Konfiguration exportieren/wiederherstellen</string>
+    <string name="update_section_title">Update</string>
+    <string name="update_section_hint">Prüft beim App-Start, ob eine neue Version verfügbar ist. Eine manuelle Prüfung ist jederzeit möglich.</string>
+    <string name="update_auto_check_label">Automatisch prüfen (max. alle 24 h)</string>
+    <string name="update_check_button">Nach Update suchen</string>
+    <string name="update_checking">Prüfe auf Updates…</string>
+    <string name="update_current_version">Version %1$s</string>
+    <string name="update_last_check">Letzte erfolgreiche Prüfung: %1$s</string>
+    <string name="update_never_checked">Noch nicht geprüft</string>
+    <string name="update_available_title">Update verfügbar</string>
+    <string name="update_force_title">Update erforderlich</string>
+    <string name="update_available_message">Version %1$s ist verfügbar. Aktuell installiert: %2$s.</string>
+    <string name="update_download">Herunterladen &amp; installieren</string>
+    <string name="update_later">Später</string>
+    <string name="update_up_to_date">Du bist auf dem neuesten Stand (Version %1$s).</string>
+    <string name="update_check_failed">Update-Prüfung fehlgeschlagen: %1$s</string>
+    <string name="update_download_started">Download gestartet. Die Installation wird angeboten, sobald die Datei geprüft ist.</string>
+    <string name="update_download_running">Ein Download läuft bereits.</string>
+    <string name="update_download_failed">Download fehlgeschlagen.</string>
+    <string name="update_hash_mismatch">Die heruntergeladene Datei ist beschädigt oder manipuliert. Bitte erneut versuchen.</string>
+    <string name="update_install_ready_title">Update bereit</string>
+    <string name="update_install_ready_message">Die Datei wurde per SHA-256 geprüft. Jetzt installieren?</string>
+    <string name="update_install">Installieren</string>
 </resources>

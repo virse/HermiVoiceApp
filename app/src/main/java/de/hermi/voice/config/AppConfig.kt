@@ -256,6 +256,50 @@ class AppConfig(context: Context) {
         get() = prefs.getLong(KEY_LAST_MODEL_CHECK, 0L)
         set(value) = prefs.edit().putLong(KEY_LAST_MODEL_CHECK, value).apply()
 
+    // ── App-Update (update.json) ─────────────────────────────────────────────
+    /** Automatisch beim App-Start prüfen (max. einmal alle 24 h). Standard: an. */
+    var updateAutoCheck: Boolean
+        get() = prefs.getBoolean(KEY_UPDATE_AUTO_CHECK, true)
+        set(value) = prefs.edit().putBoolean(KEY_UPDATE_AUTO_CHECK, value).apply()
+
+    /** Version, die der Nutzer mit „Später“ weggetippt hat. Erst eine neuere
+     *  Version fragt beim Start wieder nach. 0 = keine gemerkte Version. */
+    var updateSkippedVersion: Int
+        get() = prefs.getInt(KEY_UPDATE_SKIPPED_VERSION, 0)
+        set(value) = prefs.edit().putInt(KEY_UPDATE_SKIPPED_VERSION, value).apply()
+
+    /** Version, für die ein Pflicht-Update gemeldet wurde. Wird beim Start auch
+     *  bei deaktiviertem Auto-Check durchgesetzt, bis die installierte Version
+     *  mindestens diesen Code erreicht. 0 = kein Pflicht-Update. */
+    var updatePendingForceVersion: Int
+        get() = prefs.getInt(KEY_UPDATE_PENDING_FORCE_VERSION, 0)
+        set(value) = prefs.edit().putInt(KEY_UPDATE_PENDING_FORCE_VERSION, value).apply()
+
+    /** Zeitpunkt (epochMillis) der letzten ERFOLGREICHEN Update-Prüfung.
+     *  Fehlschläge verschieben das 24-h-Fenster nicht. */
+    var updateLastSuccessMillis: Long
+        get() = prefs.getLong(KEY_UPDATE_LAST_SUCCESS, 0L)
+        set(value) = prefs.edit().putLong(KEY_UPDATE_LAST_SUCCESS, value).apply()
+
+    /** ID des laufenden/abgeschlossenen DownloadManager-Downloads.
+     *  -1 = keiner. Nicht Teil des Backups (transienter Zustand). */
+    var updateDownloadId: Long
+        get() = prefs.getLong(KEY_UPDATE_DOWNLOAD_ID, -1L)
+        set(value) = prefs.edit().putLong(KEY_UPDATE_DOWNLOAD_ID, value).apply()
+
+    /** Zuletzt erfolgreich geladene update.json (JSON-String). Wird für die
+     *  Hash-Prüfung und den Install-Dialog nach einem Prozess-Neustart benötigt.
+     *  Nicht Teil des Backups (transienter Zustand). */
+    var updateCachedInfoJson: String
+        get() = prefs.getString(KEY_UPDATE_CACHED_INFO, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_UPDATE_CACHED_INFO, value).apply()
+
+    /** true, sobald eine heruntergeladene APK die SHA-256-Prüfung bestanden hat
+     *  und der Install-Dialog angeboten werden kann. Nicht Teil des Backups. */
+    var updateInstallReady: Boolean
+        get() = prefs.getBoolean(KEY_UPDATE_INSTALL_READY, false)
+        set(value) = prefs.edit().putBoolean(KEY_UPDATE_INSTALL_READY, value).apply()
+
     // ── KI-Modell-Auswahl (Antwort) ─────────────────────────────────────────
     // Primäres Modell-Paar (Provider + Modell-ID). Leer = „Standard (Agent-Default)",
     // d. h. es wird hermes-agent ohne provider/model-Override verwendet.
@@ -547,6 +591,13 @@ class AppConfig(context: Context) {
         private const val KEY_BOT_NAME = "bot_name"
         private const val KEY_AUTO_NEW_SESSION_MINUTES = "auto_new_session_minutes"
         private const val KEY_LAST_MODEL_CHECK = "last_model_check_millis"
+        private const val KEY_UPDATE_AUTO_CHECK = "update_auto_check"
+        private const val KEY_UPDATE_SKIPPED_VERSION = "update_skipped_version"
+        private const val KEY_UPDATE_PENDING_FORCE_VERSION = "update_pending_force_version"
+        private const val KEY_UPDATE_LAST_SUCCESS = "update_last_success_millis"
+        private const val KEY_UPDATE_DOWNLOAD_ID = "update_download_id"
+        private const val KEY_UPDATE_CACHED_INFO = "update_cached_info_json"
+        private const val KEY_UPDATE_INSTALL_READY = "update_install_ready"
         private const val KEY_PRIMARY_PROVIDER = "primary_provider"
         private const val KEY_PRIMARY_MODEL = "primary_model"
         private const val KEY_FALLBACK_PROVIDER = "fallback_provider"

@@ -10,19 +10,32 @@ import android.provider.MediaStore
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.widget.SwitchCompat
 import de.hermi.voice.R
 import de.hermi.voice.config.ConfigBackup
+import de.hermi.voice.update.UpdateManager
+import de.hermi.voice.update.UpdateUi
+import de.hermi.voice.update.UpdateVersion
 import java.io.File
+import java.text.DateFormat
+import java.util.Date
 
 /**
- * Backup: verschlüsselte Konfiguration exportieren/importieren.
+ * „Update & Backup“: Update-Prüfung (Toggle, manueller Check, Status) und die
+ * verschlüsselte Konfigurationssicherung in einem Screen. Optik analog zu
+ * „Akzent & Hintergrund“ (Sektionsüberschrift in Akzentfarbe, Bold-Untertitel,
+ * Hint, Controls).
+ *
+ * Die Update-Logik selbst liegt in [UpdateManager]; diese Activity verdrahtet
+ * nur UI und Backup-Ablauf.
  */
-class BackupActivity : SettingsSectionActivity() {
+class UpdateBackupActivity : SettingsSectionActivity() {
 
-    override val layoutRes: Int = R.layout.activity_backup
-    override val titleRes: Int = R.string.backup_section_title
+    override val layoutRes: Int = R.layout.activity_update_backup
+    override val titleRes: Int = R.string.update_backup_section_title
 
     private val configBackupImportLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -38,13 +51,120 @@ class BackupActivity : SettingsSectionActivity() {
             } else {
                 askImportPassphrase(content)
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(this, R.string.backup_import_invalid, Toast.LENGTH_LONG).show()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setupUpdateSection()
+        setupBackupSection()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Prüft Pflicht-Updates, laufende Downloads und den Auto-Check.
+        UpdateManager.onAppResume(this)
+        refreshStatus()
+    }
+
+    // ── Update ───────────────────────────────────────────────────────────────
+
+    private fun setupUpdateSection() {
+        val switch = findViewById<SwitchCompat>(R.id.updateAutoCheckSwitch)
+        switch.isChecked = config.updateAutoCheck
+        switch.setOnCheckedChangeListener { _, checked ->
+            val previous = config.updateAutoCheck
+            config.updateAutoCheck = checked
+            refreshStatus()
+            if (checked && !previous) {
+                // Einschalten prüft sofort, statt bis zum nächsten Start zu warten.
+                triggerManualCheck()
+            }
+        }
+
+        findViewById<Button>(R.id.updateCheckButton).setOnClickListener {
+            triggerManualCheck()
+        }
+    }
+
+    private fun triggerManualCheck() {
+        val button = findViewById<Button>(R.id.updateCheckButton)
+        val status = findViewById<TextView>(R.id.updateStatusText)
+        button.isEnabled = false
+        status.text = getString(R.string.update_checking)
+
+        val started = UpdateManager.checkManually(this) { result ->
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                button.isEnabled = true
+                when (result) {
+                    is UpdateManager.CheckResult.Available -> {
+                        refreshStatus()
+                        UpdateUi.showUpdateDialog(
+                            activity = this,
+                            info = result.info,
+                            forced = result.forced,
+                            onInstall = {
+                                UpdateManager.startDownload(this, result.info)
+                                refreshStatus()
+                            },
+                            onLater = {
+                                config.updateSkippedVersion = result.info.versionCode
+                                refreshStatus()
+                            }
+                        )
+                    }
+
+                    is UpdateManager.CheckResult.UpToDate -> {
+                        refreshStatus()
+                        Toast.makeText(
+                            this,
+                            getString(R.string.update_up_to_date, result.versionName),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+
+                    is UpdateManager.CheckResult.Failure -> {
+                        refreshStatus()
+                        Toast.makeText(
+                            this,
+                            getString(R.string.update_check_failed, result.message),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        }
+        if (!started) {
+            button.isEnabled = true
+            refreshStatus()
+        }
+    }
+
+    private fun refreshStatus() {
+        val status = findViewById<TextView>(R.id.updateStatusText)
+        val version = getString(
+            R.string.update_current_version,
+            UpdateVersion.installedVersionName(this)
+        )
+        val lastCheck = config.updateLastSuccessMillis
+        val checkText = if (lastCheck <= 0L) {
+            getString(R.string.update_never_checked)
+        } else {
+            val formatted = DateFormat.getDateTimeInstance(
+                DateFormat.MEDIUM,
+                DateFormat.SHORT
+            ).format(Date(lastCheck))
+            getString(R.string.update_last_check, formatted)
+        }
+        status.text = "$version · $checkText"
+    }
+
+    // ── Backup ───────────────────────────────────────────────────────────────
+
+    private fun setupBackupSection() {
         findViewById<Button>(R.id.backupExportButton).setOnClickListener { backUpExport() }
         findViewById<Button>(R.id.backupImportButton).setOnClickListener { backUpImport() }
     }
@@ -68,12 +188,21 @@ class BackupActivity : SettingsSectionActivity() {
                         val confirm = confirmInput.text.toString()
                         when {
                             pass.isEmpty() -> Toast.makeText(
-                                this@BackupActivity, R.string.backup_passphrase_required, Toast.LENGTH_SHORT
+                                this@UpdateBackupActivity,
+                                R.string.backup_passphrase_required,
+                                Toast.LENGTH_SHORT
                             ).show()
+
                             pass != confirm -> Toast.makeText(
-                                this@BackupActivity, R.string.backup_passphrase_mismatch, Toast.LENGTH_SHORT
+                                this@UpdateBackupActivity,
+                                R.string.backup_passphrase_mismatch,
+                                Toast.LENGTH_SHORT
                             ).show()
-                            else -> { dismiss(); runBackUpExport(pass) }
+
+                            else -> {
+                                dismiss()
+                                runBackUpExport(pass)
+                            }
                         }
                     }
                 }
@@ -84,7 +213,7 @@ class BackupActivity : SettingsSectionActivity() {
     private fun runBackUpExport(passphrase: String) {
         val json = try {
             ConfigBackup.export(config, passphrase.toCharArray())
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(this, R.string.backup_export_error, Toast.LENGTH_LONG).show()
             return
         }
@@ -98,7 +227,7 @@ class BackupActivity : SettingsSectionActivity() {
                 file.writeText(json)
                 Toast.makeText(this, R.string.backup_export_ok_cache, Toast.LENGTH_LONG).show()
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(this, R.string.backup_export_error, Toast.LENGTH_LONG).show()
         }
     }
@@ -145,7 +274,11 @@ class BackupActivity : SettingsSectionActivity() {
                     getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                         val pass = passInput.text.toString()
                         if (pass.isEmpty()) {
-                            Toast.makeText(this@BackupActivity, R.string.backup_passphrase_required, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this@UpdateBackupActivity,
+                                R.string.backup_passphrase_required,
+                                Toast.LENGTH_SHORT
+                            ).show()
                             return@setOnClickListener
                         }
                         dismiss()
@@ -156,17 +289,16 @@ class BackupActivity : SettingsSectionActivity() {
             .show()
     }
 
-    /** Import führt zum Neustart der Activity (liest alle Felder aus dem neuen Stand). */
     private fun applyBackupImport(content: String, passphrase: String) {
         try {
             ConfigBackup.import(content, passphrase.toCharArray(), config)
             Toast.makeText(this, R.string.backup_import_ok, Toast.LENGTH_SHORT).show()
             recreate()
-        } catch (e: javax.crypto.AEADBadTagException) {
+        } catch (_: javax.crypto.AEADBadTagException) {
             Toast.makeText(this, R.string.backup_import_wrong_passphrase, Toast.LENGTH_LONG).show()
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             Toast.makeText(this, R.string.backup_import_invalid, Toast.LENGTH_LONG).show()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(this, R.string.backup_import_invalid, Toast.LENGTH_LONG).show()
         }
     }

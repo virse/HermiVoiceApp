@@ -1,5 +1,48 @@
 # Changelog
 
+## [1.0.2] — Update-Funktion (2026-11-04, versionCode 3)
+
+### Neu
+
+- **App-Update-Prüfung:** Die App liest `update.json` vom öffentlichen GitHub-Spiegel
+  und vergleicht `versionCode` mit der installierten Version. Prüfung manuell in den
+  Einstellungen und automatisch beim App-Start (max. einmal alle 24 h, abschaltbar).
+- **Update-Download mit Integritätsprüfung:** Download über den System-DownloadManager,
+  SHA-256-Vergleich gegen `update.json`, anschließend Installationsdialog über den
+  bestehenden FileProvider. Bei fehlender Berechtigung führt die App zur Einstellung
+  „Unbekannte Quellen“.
+- **Einstellungen „Update & Backup“:** Update-Block (Toggle, Status, manuelle Prüfung)
+  und Backup-Block in einem Screen; die bisherige Backup-Kategorie geht darin auf.
+- **Changelog als Markdown:** Der Update-Dialog rendert den Changelog mit Markwon
+  (Listen, Hervorhebungen, Links).
+
+### Geändert
+
+- Update-Einstellungen (`update_auto_check`, `update_skipped_version`,
+  `update_pending_force_version`, `update_last_success_millis`) werden ins
+  Konfigurations-Backup aufgenommen. Beim Import wird der Prüfzeitstempel bewusst
+  zurückgesetzt, damit ein neues Gerät sofort prüft.
+- „Später“ merkt sich die weggetippte Version; erst eine neuere Version fragt beim
+  Start wieder nach. Pflicht-Updates (`forceUpdate`/`minSupportedVersionCode`) werden
+  auch bei deaktiviertem Auto-Check durchgesetzt.
+
+### Technik
+
+- Neues Paket `de.hermi.voice.update` (Checker, Version, SHA-256, Downloader,
+  Installer, UI, Manager); `MainActivity` bleibt schlank.
+- Markwon-Abhängigkeit für die Changelog-Darstellung.
+- `REQUEST_INSTALL_PACKAGES` und `external-files-path` für die APK-Installation.
+
+### English
+
+Adds the in-app update check against `update.json` (manual and automatic at startup,
+at most once every 24 h, can be disabled), download via DownloadManager with SHA-256
+verification and an install dialog through the existing FileProvider, a combined
+“Update & Backup” settings screen, and Markdown changelog rendering via Markwon.
+Update preferences are included in the configuration backup; the last-check timestamp
+is reset on import so a new device checks immediately. “Later” remembers the skipped
+version; forced updates are enforced even when automatic checks are disabled.
+
 ## [1.0.1] — Bugfix-Release (2026-11-03, versionCode 2)
 
 Behebt die sechs bei einer externen Code-Durchsicht gemeldeten Fehlerklassen

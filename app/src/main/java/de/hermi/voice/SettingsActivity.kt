@@ -13,7 +13,6 @@ import de.hermi.voice.settings.AccentChatBgActivity
 import de.hermi.voice.settings.AppearanceActivity
 import de.hermi.voice.settings.AutoSessionActivity
 import de.hermi.voice.settings.AvatarsActivity
-import de.hermi.voice.settings.BackupActivity
 import de.hermi.voice.settings.BotsActivity
 import de.hermi.voice.settings.ChatModelActivity
 import de.hermi.voice.settings.CloudProvidersActivity
@@ -23,6 +22,7 @@ import de.hermi.voice.settings.NotificationActivity
 import de.hermi.voice.settings.SettingsSectionActivity
 import de.hermi.voice.settings.SttModelActivity
 import de.hermi.voice.settings.TuningActivity
+import de.hermi.voice.settings.UpdateBackupActivity
 
 /**
  * Einstellungen: Übersichts-Screen mit den Hauptkategorien. Jede Kategorie
@@ -68,7 +68,7 @@ class SettingsActivity : AppCompatActivity() {
             Category(R.string.notification_section_title, R.string.settings_cat_notify_desc, NotificationActivity::class.java),
             Category(R.string.auto_session_section_title, R.string.settings_cat_autosession_desc, AutoSessionActivity::class.java),
             Category(R.string.tuning_section_title, R.string.settings_cat_tuning_desc, TuningActivity::class.java),
-            Category(R.string.backup_section_title, R.string.settings_cat_backup_desc, BackupActivity::class.java)
+            Category(R.string.update_backup_section_title, R.string.settings_cat_update_backup_desc, UpdateBackupActivity::class.java)
         )
 
         val list = findViewById<LinearLayout>(R.id.settingsCategoryList)

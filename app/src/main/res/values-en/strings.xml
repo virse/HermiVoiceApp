@@ -335,4 +335,30 @@
     <string name="model_loading_notice">The speech model is still loading — please wait a moment.</string>
     <string name="keys_unreadable_notice">Saved credentials can no longer be decrypted (e.g. after restoring on another device). Please re-enter the API key or import a backup.</string>
     <string name="answer_in_progress_notice">An answer is still running — please wait or stop it.</string>
+
+    <!-- ── Update & Backup ── -->
+    <string name="update_backup_section_title">Update &amp; Backup</string>
+    <string name="settings_cat_update_backup_desc">Check app updates; export/restore encrypted configuration</string>
+    <string name="update_section_title">Update</string>
+    <string name="update_section_hint">Checks for a new version when the app starts. A manual check is possible at any time.</string>
+    <string name="update_auto_check_label">Check automatically (at most every 24 h)</string>
+    <string name="update_check_button">Check for updates</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_current_version">Version %1$s</string>
+    <string name="update_last_check">Last successful check: %1$s</string>
+    <string name="update_never_checked">Not checked yet</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_force_title">Update required</string>
+    <string name="update_available_message">Version %1$s is available. Currently installed: %2$s.</string>
+    <string name="update_download">Download &amp; install</string>
+    <string name="update_later">Later</string>
+    <string name="update_up_to_date">You are up to date (version %1$s).</string>
+    <string name="update_check_failed">Update check failed: %1$s</string>
+    <string name="update_download_started">Download started. Installation will be offered once the file has been verified.</string>
+    <string name="update_download_running">A download is already running.</string>
+    <string name="update_download_failed">Download failed.</string>
+    <string name="update_hash_mismatch">The downloaded file is corrupted or has been tampered with. Please try again.</string>
+    <string name="update_install_ready_title">Update ready</string>
+    <string name="update_install_ready_message">The file was verified via SHA-256. Install now?</string>
+    <string name="update_install">Install</string>
 </resources>

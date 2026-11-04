@@ -10,7 +10,7 @@ plugins {
 // bzw. app-release_<version>.apk.
 // Beim nächsten Release hier hochzählen (z. B. "1.1") - Header und Dateiname
 // bleiben dann immer synchron.
-val appVersionName = "1.0.1"
+val appVersionName = "1.0.2"
 
 // Release-Signing: Zugangsdaten liegen in keystore.properties (NICHT ins Repo
 // einchecken - wird von .gitignore ausgeschlossen). Fehlt die Datei, baut das
@@ -29,7 +29,7 @@ android {
         applicationId = "de.hermi.voice"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
+        versionCode = 3
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -97,6 +97,8 @@ dependencies {
     implementation("org.apache.commons:commons-compress:1.27.1")
     // JSON (Telegram-API)
     implementation("org.json:json:20240303")
+    // Markdown-Rendering für den Update-Changelog (TextView-basiert, kein Compose)
+    implementation("io.noties.markwon:core:4.6.2")
 
     // Tests
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Installation der per SHA-256 geprüften Update-APK (Android 8+). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:name=".HermiApp"
@@ -129,7 +131,7 @@
             android:exported="false"
             android:parentActivityName=".SettingsActivity" />
         <activity
-            android:name=".settings.BackupActivity"
+            android:name=".settings.UpdateBackupActivity"
             android:exported="false"
             android:parentActivityName=".SettingsActivity" />
     </application>
