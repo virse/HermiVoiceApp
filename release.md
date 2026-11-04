@@ -43,31 +43,7 @@ Der APK-Name wird automatisch versioniert und **variantenabhängig** vergeben:
 - Die Datei ist damit zugleich der direkte Download-/Sideload-Pfad (APK auf dem Gerät
   ausführen bzw. per Dateimanager installieren; „Unbekannte Quellen“ für Sideload erlauben).
 
-## 5. Release-Erstellung
-
-- Neues Release mit der Release-APK als **Asset** erstellen (z. B. Tag der neuen Version
-  im Repo, APK anhängen). Der Repo-Stand umfasst vollständig: Quellcode, README,
-  CHANGELOG und LICENSE (Apache-2.0); die Release-APK aus `releases/` wird als Asset
-  angehängt.
-- **Doku mitschreiben:** Eintrag in `CHANGELOG.md` nach dem Schema
-  `## [Version] — Datum (versionCode N)` mit Kategorien (Neu / Geändert / Behoben /
-  Technik); Detailänderungen seit dem letzten Release stammen aus dem Commit-Verlauf.
-  Die Dokumentation (README / CHANGELOG / Release-Ablauf) bei größeren Releases
-  aktualisieren.
-- **Konfigurations-Backup:** Die App exportiert die Konfiguration als passphrase-geschützt
-  verschlüsseltes JSON (AES-256-GCM); bei größeren Updates kann ein Backup vor dem Upgrade
-  sinnvoll sein — die App erzwingt das nicht.
-- **Update-Metadaten:** `update.json` im Repo-Root pflegen (`versionCode`, `versionName`,
-  `apkUrl`, `sha256`, `changelog`, `forceUpdate`, `minSupportedVersionCode`). Der Hash wird
-  nach dem Build mit `sha256sum releases/app-release_<version>.apk` berechnet. Die App
-  liest die Datei über den öffentlichen GitHub-Spiegel
-  (`raw.githubusercontent.com/virse/HermiVoiceApp/main/update.json`).
-- **Spiegel:** Gitea (`michael/HermiVoice`) ist das primäre Repo; GitHub
-  (`virse/HermiVoiceApp`) ist der öffentliche Spiegel. Code, Tag, Release-Asset und
-  `update.json` müssen dorthin gespiegelt werden, weil die App nur öffentlich erreichbare
-  URLs abrufen kann.
-
-## 6. Freigabe / Sideload
+## 5. Freigabe / Sideload
 
 - APK auf einem Android-Gerät (7.0+; empfohlen: aktuelles S-Release) aus `releases/`
   installieren.
@@ -104,24 +80,7 @@ English version of the guide above.
    The file doubles as the direct download/sideload path (run the APK on the device or
    install via file manager; allow “unknown sources” for sideloading).
 
-5. **Creating a release** — create a new release with the release APK as **asset**
-   (e.g. tag the new version in the repo, attach the APK). The repo fully contains:
-   source code, README, CHANGELOG and LICENSE (Apache-2.0); the release APK from
-   `releases/` is attached as asset. Keep the docs in sync: add a `CHANGELOG.md` entry
-   following `## [Version] — date (versionCode N)` with categories (Added / Changed /
-   Fixed / Technical); update the documentation (README / CHANGELOG / Release guide) for
-   larger releases. **Configuration backup:** the app exports its configuration as
-   passphrase-protected encrypted JSON (AES-256-GCM); a backup before bigger updates can
-   be sensible — the app does not enforce it. **Update metadata:** maintain `update.json`
-   in the repo root (`versionCode`, `versionName`, `apkUrl`, `sha256`, `changelog`,
-   `forceUpdate`, `minSupportedVersionCode`); compute the hash after the build with
-   `sha256sum releases/app-release_<version>.apk`. The app reads the file from the public
-   GitHub mirror (`raw.githubusercontent.com/virse/HermiVoiceApp/main/update.json`).
-   **Mirror:** Gitea (`michael/HermiVoice`) is the primary repo; GitHub
-   (`virse/HermiVoiceApp`) is the public mirror. Code, tag, release asset and
-   `update.json` must be mirrored there because the app can only fetch public URLs.
-
-6. **Release / sideload** — install the APK from `releases/` on an Android device
+5. **Release / sideload** — install the APK from `releases/` on an Android device
    (7.0+; a current S release is recommended). Default configuration after install:
    enter your own Hermes agent endpoint and API key in the app settings (values are
    stored exclusively encrypted in the private app storage). Transport is plain HTTP;
