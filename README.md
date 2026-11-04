@@ -1,6 +1,6 @@
 # HermiVoice
 
-<center><img src="app/hermi-voice_icon.png" alt="HermiVoice" width="120"></center>
+<p align="center"><img src="app/hermi-voice_icon.png" alt="HermiVoice" width="120"></p>
 
 **English version below.**
 
