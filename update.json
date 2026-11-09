@@ -1,9 +1,9 @@
 {
-  "versionCode": 3,
-  "versionName": "1.0.2",
-  "apkUrl": "https://github.com/virse/HermiVoiceApp/releases/download/v1.0.2/app-release_1.0.2.apk",
-  "sha256": "7e7214df94c9983373bd6e6641a3d46923c2bceb9d13c31c535c3609f0fa46ef",
-  "changelog": "- Neu: Update-Prüfung gegen update.json (manuell und automatisch beim Start, max. alle 24 h)\n- Neu: Update-Download mit SHA-256-Prüfung und Installationsdialog\n- Neu: Einstellungen „Update & Backup“ mit Update-Toggle und Backup an einem Ort\n- Update-Einstellungen werden ins Konfigurations-Backup übernommen\n- Changelog im Update-Dialog wird als Markdown gerendert",
+  "versionCode": 4,
+  "versionName": "1.0.3",
+  "apkUrl": "https://github.com/virse/HermiVoiceApp/releases/download/v1.0.3/app-release_1.0.3.apk",
+  "sha256": "046386f1edc50f9113f0383e30612bdc12581ff3c242355bf38645617d2a1260",
+  "changelog": "- Neu: Tabellen werden als Karten dargestellt (erste Spalte als Überschrift, übrige Spalten als „Spalte: Wert“) – nichts bricht mehr mitten in der Zeile um\n- Geändert: Tabellen ohne führende | werden erkannt\n- Geändert: Fett, Code und Links funktionieren jetzt auch in Tabellenzellen\n- Technik: Markdown-Formatter überarbeitet, erstmals automatisierte Tests",
   "forceUpdate": false,
   "minSupportedVersionCode": 0
 }

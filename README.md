@@ -35,7 +35,8 @@ jederzeit umschaltbar (Startmodus wählbar).
 - **Fehlerbehandlung**: First-Token-Timeout, Failed-Turn-Erkennung, Fallback-Hinweis
   („Primärmodell nicht erreichbar…“), Retry „Erneut senden“
 - **Streaming tokenweise (SSE)** mit „Denkt…“-Block für Reasoning und Markdown-Rendering
-  (Code-Blöcke mit Tap-zu-Kopieren, Tabellen, Überschriften, Listen, Zitate)
+  (Code-Blöcke mit Tap-zu-Kopieren, Tabellen als umbruchfähige Karten, Überschriften,
+  Listen, Zitate)
 - **Session-Abgleich**: im Vordergrund wird der Verlauf regelmäßig mit dem Gateway
   abgeglichen; Löschen einer Session entfernt den Verlauf auch serverseitig (best-effort)
 - **Darstellung & Personalisierung**: dunkles UI, 6 Akzentfarben, Chat-Hintergrund
@@ -130,7 +131,8 @@ time (start mode selectable).
 - **Error handling**: first-token timeout, failed-turn detection, fallback note
   (“primary model unreachable…”), “Resend” retry
 - **Token-by-token streaming (SSE)** with a “Thinking…” block for reasoning and Markdown
-  rendering (code blocks with tap-to-copy, tables, headings, lists, quotes)
+  rendering (code blocks with tap-to-copy, tables as wrap-safe cards, headings, lists,
+  quotes)
 - **Session sync**: while in the foreground, the history is regularly reconciled with the
   gateway; deleting a session also removes the history server-side (best-effort)
 - **Appearance & personalisation**: dark UI, 6 accent colours, chat background

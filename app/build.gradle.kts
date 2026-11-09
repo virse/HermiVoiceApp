@@ -10,7 +10,7 @@ plugins {
 // bzw. app-release_<version>.apk.
 // Beim nächsten Release hier hochzählen (z. B. "1.1") - Header und Dateiname
 // bleiben dann immer synchron.
-val appVersionName = "1.0.2"
+val appVersionName = "1.0.3"
 
 // Release-Signing: Zugangsdaten liegen in keystore.properties (NICHT ins Repo
 // einchecken - wird von .gitignore ausgeschlossen). Fehlt die Datei, baut das
@@ -29,7 +29,7 @@ android {
         applicationId = "de.hermi.voice"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
+        versionCode = 4
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -101,6 +101,10 @@ dependencies {
     implementation("io.noties.markwon:core:4.6.2")
 
     // Tests
+    // JVM-Unit-Tests für den Markdown-Formatter — brauchen android.text-Klassen,
+    // deshalb Robolectric (Spans werden in einer JVM-Sandbox ausgeführt).
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.17")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation("androidx.test:runner:1.6.2")

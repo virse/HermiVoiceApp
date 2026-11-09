@@ -19,3 +19,5 @@ tmp/
 *.log
 .DS_Store
 releases/
+# uiautomator-Dump aus lokalen UI-Analysen (kein Projektinhalt)
+ui_settings.xml

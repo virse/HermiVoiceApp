@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.0.3] — Markdown-Tabellen lesbar (2026-11-09, versionCode 4)
+
+### Neu
+
+- **Tabellen als Karten:** Tabellen werden nicht mehr als ausgerichteter
+  Monospace-Block dargestellt, sondern Zeile für Zeile: Die erste Spalte steht als
+  Überschrift, die übrigen Spalten folgen eingerückt als „Spalte: Wert“. Dadurch
+  bleiben die Zuordnungen auch auf schmalen Displays erhalten und nichts bricht
+  mitten in der Zeile um.
+
+### Geändert
+
+- **Tabellen ohne führende `|`** werden jetzt ebenfalls erkannt (Modelle lassen die
+  äußeren Striche häufig weg); vorher landeten solche Tabellen als Fließtext im Chat.
+- **Formatierung in Zellen:** Fett, Code und Links funktionieren jetzt auch innerhalb
+  von Tabellenzellen.
+- Spaltennamen aus der Kopfzeile werden gedimmt angezeigt; die Trennzeile aus
+  `---` entfällt.
+
+### Technik
+
+- Markdown-Formatter: Tabellen-Rendering neu aufgebaut (Spaltenbreiten-Auffüllung
+  per Leerzeichen entfernt, Hängeeinzug für die Spaltenzeilen).
+- Erstmals automatisierte Tests für den Markdown-Formatter (6 Fälle, inklusive der
+  Tabellenformen aus der Praxis).
+
 ## [1.0.2] — Update-Funktion (2026-11-04, versionCode 3)
 
 ### Neu

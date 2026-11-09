@@ -77,7 +77,7 @@ object MarkdownFormatter {
                     rows.add(lines[j].trim())
                     j++
                 }
-                appendTable(sb, rows)
+                appendTable(sb, rows, density)
                 i = j
                 appendLineBreak(sb, i < lines.size)
                 continue
@@ -182,40 +182,87 @@ object MarkdownFormatter {
         sb.setSpan(ForegroundColorSpan(MUTED_COLOR), hintStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
 
-    /** Tabelle als Monospace-Textzeilen, Spalten auf maximale Zellbreite
-     *  ausgerichtet; Header fett, Trennzeile als Linie. */
-    private fun appendTable(sb: SpannableStringBuilder, rows: List<String>) {
-        val blockStart = sb.length
+    /** Tabelle als umbruchfähige Karten. Vorher wurde jede Tabellenzeile als
+     *  EIN gepolsterter Monospace-String ausgegeben (Spalten per `padEnd`
+     *  ausgerichtet). Das funktioniert nur, solange die Zeile in die Blase
+     *  passt: Bei 16sp Monospace sind das in einer 450dp-Breite ~36 Zeichen.
+     *  Eine dreispaltige Tabelle mit echten Inhalten kommt leicht auf 110+
+     *  Zeichen — dann bricht das TextView mitten in der Zeile um und die
+     *  Spaltenzuordnung ist zerstört (die Trennzeile aus `-` erscheint als
+     *  Reihe von Strichzeilen). Deshalb jetzt: Kopfzeile liefert die
+     *  Spaltennamen, jede Datenzeile wird zu "Spalte: Wert"-Zeilen, die
+     *  beliebig umbrechen dürfen. Zellinhalte laufen durch [formatInline]
+     *  (fett, Code, Links funktionieren damit auch in Zellen). */
+    private fun appendTable(sb: SpannableStringBuilder, rows: List<String>, density: Float) {
         val parsed = rows.map { splitTableCells(it) }
+        if (parsed.isEmpty()) return
+        val header = parsed.first()
         val colCount = parsed.maxOf { it.size }
-        val widths = IntArray(colCount)
-        for (row in parsed) {
-            for (c in row.indices) {
-                if (row[c].length > widths[c]) widths[c] = row[c].length
-            }
+        // Zeile 1 ist die Trennzeile (|---|) — inhaltlich leer, wird übersprungen.
+        val dataStart = if (parsed.size > 1 && isTableSeparator(rows[1])) 2 else 1
+        val data = parsed.drop(dataStart)
+        val bulletIndent = (14 * density).toInt()
+        val hanging = (11 * density).toInt()
+
+        if (data.isEmpty()) {
+            // Nur Kopfzeile (z. B. abgeschnittene Streaming-Tabelle): als Text.
+            if (header.any { it.isNotEmpty() }) sb.append(formatInline(header.joinToString(" — ") { it }))
+            return
         }
-        for (r in rows.indices) {
-            val isSep = isTableSeparator(rows[r])
-            val cells = parsed[r]
-            val line = buildString {
-                for (c in 0 until colCount) {
-                    if (isSep) {
-                        append("-".repeat(widths[c]))
-                    } else {
-                        val cell = if (c < cells.size) cells[c] else ""
-                        append(cell.padEnd(widths[c]))
+
+        for ((rowIndex, cells) in data.withIndex()) {
+            if (rowIndex > 0) sb.append("\n\n")
+            val rowLabel = cells.firstOrNull().orEmpty()
+            val rowStart = sb.length
+
+            if (colCount <= 2) {
+                // Zwei Spalten: "Label: Wert" in einer Zeile.
+                if (rowLabel.isNotEmpty()) {
+                    val start = sb.length
+                    sb.append(formatInline(rowLabel))
+                    sb.setSpan(StyleSpan(Typeface.BOLD), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    val value = cells.getOrNull(1).orEmpty()
+                    if (value.isNotEmpty()) {
+                        sb.append(": ")
+                        sb.append(formatInline(value))
                     }
-                    if (c < colCount - 1) append(" | ")
+                } else {
+                    val value = cells.getOrNull(1).orEmpty()
+                    if (value.isNotEmpty()) sb.append(formatInline(value))
                 }
+                continue
             }
-            sb.append(line)
-            if (r < rows.size - 1) sb.append("\n")
+
+            // Drei und mehr Spalten: erste Zelle als Zeilentitel, die übrigen
+            // als "Spalte: Wert" darunter (Spaltenname gedimmt).
+            if (rowLabel.isNotEmpty()) {
+                val start = sb.length
+                sb.append(formatInline(rowLabel))
+                sb.setSpan(StyleSpan(Typeface.BOLD), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            for (c in 1 until colCount) {
+                val value = cells.getOrNull(c).orEmpty()
+                if (value.isEmpty()) continue
+                if (sb.length > rowStart) sb.append("\n")
+                val lineStart = sb.length
+                sb.append("• ")
+                val label = header.getOrNull(c).orEmpty()
+                if (label.isNotEmpty()) {
+                    val labelStart = sb.length
+                    sb.append(formatInline(label))
+                    sb.setSpan(
+                        ForegroundColorSpan(MUTED_COLOR), labelStart, sb.length,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                    sb.append(": ")
+                }
+                sb.append(formatInline(value))
+                sb.setSpan(
+                    LeadingMarginSpan.Standard(bulletIndent, bulletIndent + hanging),
+                    lineStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
         }
-        val blockEnd = sb.length
-        sb.setSpan(TypefaceSpan("monospace"), blockStart, blockEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        // Header-Zeile fett (bis zum ersten Zeilenumbruch).
-        val headerEnd = sb.indexOf("\n", blockStart).let { if (it < 0 || it > blockEnd) blockEnd else it }
-        sb.setSpan(StyleSpan(Typeface.BOLD), blockStart, headerEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
 
     /** Inline-Markdown in einer einzelnen Zeile (ohne Zeilenumbrüche):
@@ -356,14 +403,17 @@ object MarkdownFormatter {
     private fun isFence(trimmed: String): Boolean =
         trimmed.startsWith("```") || trimmed.startsWith("~~~")
 
-    /** Tabellen-Datenzeile: beginnt mit | und enthält mindestens ein weiteres |. */
+    /** Tabellen-Datenzeile: mindestens zwei |-Trenner. Die führende Pipe ist
+     *  optional — Modelle lassen sie häufig weg (`A | B` statt `| A | B |`),
+     *  vorher fiel so eine Tabelle komplett in den Fließtext-Pfad. */
     private fun isTableRow(trimmed: String): Boolean =
-        trimmed.startsWith("|") && trimmed.count { it == '|' } >= 2
+        trimmed.count { it == '|' } >= 2
 
-    /** Trennzeile: nur -, :, | und Leerzeichen zwischen den Pipes. */
+    /** Trennzeile: nur -, :, | und Leerzeichen zwischen den Pipes; mindestens
+     *  ein |-Trenner, damit eine bloße Linie (`---`) nicht als Tabelle gilt. */
     private fun isTableSeparator(trimmed: String): Boolean {
+        if (!trimmed.contains('|')) return false
         var t = trimmed
-        if (!t.startsWith("|")) return false
         if (t.startsWith("|")) t = t.substring(1)
         if (t.endsWith("|")) t = t.substring(0, t.length - 1)
         return t.contains('-') && t.all { it == '-' || it == ':' || it == ' ' || it == '|' }
