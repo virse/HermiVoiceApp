@@ -9,6 +9,7 @@ import de.hermi.voice.api.HermesApiSender
 import de.hermi.voice.config.AppConfig
 import de.hermi.voice.config.ModelOptionsFetcher
 import de.hermi.voice.config.ModelPickerDialog
+import de.hermi.voice.config.Reasoning
 import kotlin.concurrent.thread
 
 /**
@@ -165,7 +166,11 @@ class ChatModelActivity : SettingsSectionActivity() {
                         baseUrl = url,
                         apiKey = key,
                         history = listOf("user" to "Sag nur 'ok'."),
-                        modelPair = pair
+                        modelPair = pair,
+                        // Test läuft mit derselben Reasoning-Steuerung wie das Senden.
+                        modelOptions = Reasoning.hermesModelOptions(
+                            Reasoning.hermesDecision(config, fetcher, null, pair.first, pair.second)
+                        )
                     )
                     runOnUiThread {
                         testBtn.isEnabled = true
@@ -181,6 +186,7 @@ class ChatModelActivity : SettingsSectionActivity() {
                 }
             }
         }
+
     }
 
     private fun accentBaseColor(): Int =

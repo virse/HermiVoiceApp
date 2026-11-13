@@ -18,6 +18,7 @@ import de.hermi.voice.config.CloudProvider
 import de.hermi.voice.config.CloudProviders
 import de.hermi.voice.config.CloudTools
 import de.hermi.voice.config.ModelPickerDialog
+import de.hermi.voice.config.Reasoning
 import java.util.UUID
 import kotlin.concurrent.thread
 
@@ -82,7 +83,26 @@ class CloudProvidersActivity : SettingsSectionActivity() {
         if (prim == null && fb == null) {
             sb.append('\n').append(getString(R.string.cloud_info_no_model))
         }
+        sb.append('\n').append(
+            getString(R.string.reasoning_info_prefix) + ": " +
+                reasoningLabel(p.reasoningMode, p.reasoningEffort)
+        )
         return sb.toString()
+    }
+
+    /** Kurzlabel „An · medium" / „Aus" / „Global (Standard)" für die Übersicht. */
+    private fun reasoningLabel(mode: String, effort: String): String {
+        val m = when (mode) {
+            Reasoning.MODE_ON -> getString(R.string.reasoning_mode_on)
+            Reasoning.MODE_OFF -> getString(R.string.reasoning_mode_off)
+            else -> getString(R.string.reasoning_mode_inherit)
+        }
+        return when {
+            mode == Reasoning.MODE_OFF -> m
+            effort.isBlank() -> m
+            effort == Reasoning.LEVEL_DEFAULT -> "$m · ${getString(R.string.reasoning_level_default)}"
+            else -> "$m · $effort"
+        }
     }
 
     private fun showCloudEditor(existing: CloudProvider?) {
@@ -91,7 +111,8 @@ class CloudProvidersActivity : SettingsSectionActivity() {
             CloudProvider(
                 id = it.id, name = it.name, provider = it.provider, apiKey = it.apiKey,
                 primaryModel = it.primaryModel, fallbackModel = it.fallbackModel,
-                tools = it.tools
+                tools = it.tools, reasoningMode = it.reasoningMode,
+                reasoningEffort = it.reasoningEffort
             )
         } ?: CloudProvider(
             id = UUID.randomUUID().toString(),
@@ -164,10 +185,45 @@ class CloudProvidersActivity : SettingsSectionActivity() {
         }
         // Die Tool-Verfügbarkeit folgt dem gewählten Anbieter im Spinner.
         refreshToolAvailability(slugs.getOrNull(providerSpinner.selectedItemPosition) ?: "")
+
+        // Reasoning je Eintrag: Anbieter (und Modell) bestimmen, was möglich ist.
+        val reasoningSpinner = view.findViewById<Spinner>(R.id.cloudEditReasoning)
+        val reasoningLevel = view.findViewById<Spinner>(R.id.cloudEditReasoningLevel)
+        val reasoningNotice = view.findViewById<TextView>(R.id.cloudEditReasoningNotice)
+        fun refreshReasoning() {
+            val slug = slugs.getOrNull(providerSpinner.selectedItemPosition) ?: ""
+            val model = editor.primaryModel.ifBlank { editor.fallbackModel }
+            val support = Reasoning.directSupport(slug, model)
+            if (support == null) {
+                reasoningSpinner.isEnabled = false
+                reasoningSpinner.alpha = 0.45f
+                reasoningLevel.isEnabled = false
+                reasoningLevel.alpha = 0.45f
+                reasoningNotice.visibility = View.VISIBLE
+                reasoningNotice.text = getString(R.string.reasoning_not_supported)
+                return
+            }
+            reasoningSpinner.isEnabled = support.canDisable
+            reasoningSpinner.alpha = if (support.canDisable) 1f else 0.45f
+            reasoningNotice.visibility =
+                if (support.canDisable) View.GONE else View.VISIBLE
+            if (!support.canDisable) {
+                reasoningNotice.text = getString(R.string.reasoning_off_not_supported)
+            }
+            ReasoningUi.setupMode(this, reasoningSpinner, editor.reasoningMode) {
+                editor.reasoningMode = it
+            }
+            ReasoningUi.setupProviderLevel(
+                this, reasoningLevel, support.levels, editor.reasoningEffort
+            ) { editor.reasoningEffort = it }
+        }
+        refreshReasoning()
+
         providerSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?,
                                         position: Int, id: Long) {
                 refreshToolAvailability(slugs.getOrNull(position) ?: "")
+                refreshReasoning()
             }
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
@@ -214,6 +270,7 @@ class CloudProvidersActivity : SettingsSectionActivity() {
                                 editor.primaryModel = sel?.second ?: ""
                             }
                             refreshModelButtons()
+                            refreshReasoning()
                         }
                     ).show()
                 }
@@ -244,6 +301,15 @@ class CloudProvidersActivity : SettingsSectionActivity() {
                         // über /v1/chat/completions unterstützt (Registry-basiert).
                         editor.tools = currentTools.filterTo(mutableSetOf()) {
                             CloudTools.isEnabledFor(slug, it)
+                        }
+                        // Reasoning: „Aus" nur speichern, wenn der Anbieter das
+                        // Denken überhaupt abschalten kann; sonst bleibt es an.
+                        val support = Reasoning.directSupport(slug, editor.primaryModel.ifBlank { editor.fallbackModel })
+                        if (support == null) {
+                            editor.reasoningMode = Reasoning.MODE_INHERIT
+                            editor.reasoningEffort = ""
+                        } else if (!support.canDisable) {
+                            editor.reasoningMode = Reasoning.MODE_ON
                         }
                         if (editor.name.isBlank()) editor.name = CloudProviders.providerName(slug)
                         val list = config.getCloudProviders().toMutableList()

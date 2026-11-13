@@ -102,6 +102,10 @@
             android:exported="false"
             android:parentActivityName=".SettingsActivity" />
         <activity
+            android:name=".settings.ReasoningActivity"
+            android:exported="false"
+            android:parentActivityName=".SettingsActivity" />
+        <activity
             android:name=".settings.AppearanceActivity"
             android:exported="false"
             android:parentActivityName=".SettingsActivity" />

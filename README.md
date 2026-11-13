@@ -32,6 +32,13 @@ jederzeit umschaltbar (Startmodus wählbar).
   primäres + Fallback-Modell; zustandslos (keine Session-Verwaltung)
 - **Konfigurierbare Zeitfenster**: First-Token 10 s–1 min (Standard 30 s, Live-Countdown),
   Gesamtantwortzeit 1–15 min (Standard 5 min), Reset-Button
+- **Reasoning steuerbar** (eigene Einstellungs-Sektion): zwei unabhängige Regler für
+  **lokale** und für **Cloud-Modelle** im Hermes-Kanal, je An/Aus plus Denk-Stufe
+  (minimal … max, oder „Standard“ = Agent-/Anbieter-Vorgabe); pro Bot und pro
+  Cloud-Anbieter übersteuerbar. Im direkten Cloud-Kanal wird das anbieterspezifische
+  Format gesendet (OpenRouter, DeepSeek, Groq, Mistral, OpenAI); Modelle ohne
+  Reasoning-Unterstützung werden ausgegraut. Bei aktivem Denken wird das First-Token-
+  Fenster automatisch gestreckt, damit lange Denkphasen die Antwort nicht abbrechen.
 - **Fehlerbehandlung**: First-Token-Timeout, Failed-Turn-Erkennung, Fallback-Hinweis
   („Primärmodell nicht erreichbar…“), Retry „Erneut senden“
 - **Streaming tokenweise (SSE)** mit „Denkt…“-Block für Reasoning und Markdown-Rendering
@@ -128,6 +135,13 @@ time (start mode selectable).
   model; stateless (no session management)
 - **Configurable timeouts**: first token 10 s–1 min (default 30 s, live countdown), total
   answer time 1–15 min (default 5 min), reset button
+- **Controllable reasoning** (dedicated settings section): two independent controls for
+  **local** and for **cloud models** in the Hermes channel, each on/off plus thinking level
+  (minimal … max, or “Default” = agent/provider setting); overridable per bot and per cloud
+  provider. The direct cloud channel sends the provider-specific format (OpenRouter,
+  DeepSeek, Groq, Mistral, OpenAI); models without reasoning support are greyed out. While
+  thinking is active, the first-token window is extended automatically so long thinking
+  phases do not cut off the answer.
 - **Error handling**: first-token timeout, failed-turn detection, fallback note
   (“primary model unreachable…”), “Resend” retry
 - **Token-by-token streaming (SSE)** with a “Thinking…” block for reasoning and Markdown

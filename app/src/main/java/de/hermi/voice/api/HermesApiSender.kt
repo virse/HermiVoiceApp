@@ -124,7 +124,9 @@ object HermesApiSender {
             baseUrl: String,
             apiKey: String,
             history: List<Pair<String, String>>,
-            modelPair: Pair<String, String>? = null
+            modelPair: Pair<String, String>? = null,
+            /** Reasoning-Steuerung (`{"reasoning": {...}}`); null = Feld nicht senden. */
+            modelOptions: JSONObject? = null
         ): String {
             if (baseUrl.isBlank() || apiKey.isBlank()) {
                 throw HermesApiException("Server-URL oder API-Key fehlt")
@@ -153,6 +155,7 @@ object HermesApiSender {
             } else {
                 json.put("model", "hermes-agent")
             }
+            modelOptions?.let { json.put("model_options", it) }
             val body = json.toString()
 
             val conn = URL(endpoint).openConnection() as HttpURLConnection
@@ -217,6 +220,8 @@ object HermesApiSender {
             modelPair: Pair<String, String>? = null,
             sessionKey: String? = null,
             cancellationToken: StreamCancellation? = null,
+            /** Reasoning-Steuerung (`{"reasoning": {...}}`); null = Feld nicht senden. */
+            modelOptions: JSONObject? = null,
             firstTokenTimeoutMs: Long = FIRST_TOKEN_READ_TIMEOUT_MS,
             streamTimeoutMs: Long = STREAM_READ_TIMEOUT_MS,
             onDelta: (String) -> Unit,
@@ -247,6 +252,9 @@ object HermesApiSender {
         } else {
             json.put("model", "hermes-agent")
         }
+        // Reasoning-Steuerung pro Request (Gateway: model_options.reasoning).
+        // Ohne Angabe bleibt der Request unverändert (Agent-Standard).
+        modelOptions?.let { json.put("model_options", it) }
         val body = json.toString()
 
         val conn = URL(endpoint).openConnection() as HttpURLConnection
@@ -531,6 +539,9 @@ object HermesApiSender {
         model: String,
         provider: String = "",
         enabledToolSlugs: Set<String> = emptySet(),
+        /** Anbieterspezifische Reasoning-Felder (z. B. `reasoning`, `thinking`,
+         *  `reasoning_effort`); null = unverändert senden. */
+        reasoningExtras: JSONObject? = null,
         cancellationToken: StreamCancellation? = null,
         firstTokenTimeoutMs: Long = FIRST_TOKEN_READ_TIMEOUT_MS,
         streamTimeoutMs: Long = STREAM_READ_TIMEOUT_MS,
@@ -562,6 +573,16 @@ object HermesApiSender {
         // Support), bleibt der Request unverändert (kein "tools"-Feld), damit
         // OpenAI-kompatible Ziele ohne Tool-Unterstützung nicht scheitern.
         CloudTools.buildTools(enabledToolSlugs, provider)?.let { json.put("tools", it) }
+        // Reasoning-Felder des Anbieters (bereits kanalgerecht gebaut): flach in
+        // den Body übernehmen — OpenRouter/DeepSeek erwarten eigene Objekte,
+        // OpenAI/Groq/Mistral ein Top-Level-reasoning_effort.
+        if (reasoningExtras != null) {
+            val keys = reasoningExtras.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                json.put(k, reasoningExtras.get(k))
+            }
+        }
         val body = json.toString()
 
         val conn = URL(endpoint).openConnection() as HttpURLConnection

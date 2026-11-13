@@ -1,9 +1,9 @@
 {
-  "versionCode": 4,
-  "versionName": "1.0.3",
-  "apkUrl": "https://github.com/virse/HermiVoiceApp/releases/download/v1.0.3/app-release_1.0.3.apk",
-  "sha256": "046386f1edc50f9113f0383e30612bdc12581ff3c242355bf38645617d2a1260",
-  "changelog": "- Neu: Tabellen werden als Karten dargestellt (erste Spalte als Überschrift, übrige Spalten als „Spalte: Wert“) – nichts bricht mehr mitten in der Zeile um\n- Geändert: Tabellen ohne führende | werden erkannt\n- Geändert: Fett, Code und Links funktionieren jetzt auch in Tabellenzellen\n- Technik: Markdown-Formatter überarbeitet, erstmals automatisierte Tests",
+  "versionCode": 5,
+  "versionName": "1.0.4",
+  "apkUrl": "https://github.com/virse/HermiVoiceApp/releases/download/v1.0.4/app-release_1.0.4.apk",
+  "sha256": "cbbc484e7a335039bd533dbc30ad872eb05f9a62a9f8a96b5427500b52921a68",
+  "changelog": "- Neu: eigene Einstellungs-Sektion „Reasoning“ – Denken der Modelle an/aus und mit Denk-Stufe (minimal bis max)\n- Neu: zwei unabhängige Regler für lokale und für Cloud-Modelle im Hermes-Kanal\n- Neu: pro Bot und pro Cloud-Anbieter übersteuerbar (Global / An / Aus + eigene Stufe)\n- Neu: First-Token-Fenster wird bei aktivem Denken automatisch gestreckt (kein Abbruch langer Denkphasen)\n- Geändert: Reasoning-Regler aus „Hermes-KI-Modell“ in die neue Sektion verschoben\n- Geändert: Modelle ohne Reasoning-Unterstützung werden ausgegraut",
   "forceUpdate": false,
   "minSupportedVersionCode": 0
 }

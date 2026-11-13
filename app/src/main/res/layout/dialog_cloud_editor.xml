@@ -89,6 +89,47 @@
             android:layout_marginTop="4dp"
             android:orientation="vertical" />
 
+        <!-- ── Reasoning (direkter Cloud-Kanal, je Eintrag) ── -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/reasoning_cloud_direct_label"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/reasoning_cloud_direct_hint"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:lineSpacingExtra="1dp" />
+
+        <Spinner
+            android:id="@+id/cloudEditReasoning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:spinnerMode="dropdown" />
+
+        <Spinner
+            android:id="@+id/cloudEditReasoningLevel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:spinnerMode="dropdown" />
+
+        <TextView
+            android:id="@+id/cloudEditReasoningNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/cloudEditHint"
             android:layout_width="match_parent"

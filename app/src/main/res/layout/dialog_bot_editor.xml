@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Editor für ein Profil/Bot (neu oder bearbeiten): Name, API-Key und die
-     persönliche Modellwahl (primär + Fallback). Die Server-URL wird nicht
-     angezeigt — sie gilt für alle Profile/Bots aus dem globalen Feld. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     persönliche Modellwahl (primär + Fallback) sowie die Reasoning-Overrides.
+     Die Server-URL wird nicht angezeigt — sie gilt für alle Profile/Bots aus
+     dem globalen Feld. Scrollbar, weil die Liste der Felder gewachsen ist. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -103,6 +108,54 @@
         android:layout_marginTop="8dp"
         android:text="@string/fallback_model_default" />
 
+    <!-- ── Reasoning-Override: lokale Modelle ── -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/reasoning_bot_local_label"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <Spinner
+        android:id="@+id/botEditLocalReasoning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:spinnerMode="dropdown" />
+
+    <Spinner
+        android:id="@+id/botEditLocalReasoningLevel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:spinnerMode="dropdown" />
+
+    <!-- ── Reasoning-Override: Cloud-Modelle im Hermes-Kanal ── -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/reasoning_bot_cloud_label"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <Spinner
+        android:id="@+id/botEditCloudReasoning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:spinnerMode="dropdown" />
+
+    <Spinner
+        android:id="@+id/botEditCloudReasoningLevel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:spinnerMode="dropdown" />
+
     <TextView
         android:id="@+id/botEditHint"
         android:layout_width="match_parent"
@@ -113,3 +166,4 @@
         android:textSize="13sp"
         android:lineSpacingExtra="2dp" />
 </LinearLayout>
+</ScrollView>

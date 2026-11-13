@@ -343,6 +343,35 @@ class AppConfig(context: Context) {
             .putInt(KEY_PRIMARY_FAIL_THRESHOLD, value.coerceIn(MIN_PRIMARY_FAIL_THRESHOLD, MAX_PRIMARY_FAIL_THRESHOLD))
             .apply()
 
+    // ── Reasoning (Hermes-Kanal: lokale und Cloud-Modelle getrennt) ─────────
+    // Zwei unabhängige Schalter: greift ein lokales Modell, gilt der lokale,
+    // bei einem Cloud-Modell im Hermes-Kanal der Cloud-Schalter. Bots können
+    // beide übersteuern. „An" schickt die Stufe mit (Standard = Agent-Default).
+    var reasoningLocalEnabled: Boolean
+        get() = prefs.getBoolean(KEY_REASONING_LOCAL_ENABLED, true)
+        set(value) = prefs.edit().putBoolean(KEY_REASONING_LOCAL_ENABLED, value).apply()
+
+    var reasoningLocalEffort: String
+        get() = prefs.getString(KEY_REASONING_LOCAL_EFFORT, Reasoning.DEFAULT_LEVEL) ?: Reasoning.DEFAULT_LEVEL
+        set(value) = prefs.edit().putString(KEY_REASONING_LOCAL_EFFORT, value.trim()).apply()
+
+    var reasoningCloudEnabled: Boolean
+        get() = prefs.getBoolean(KEY_REASONING_CLOUD_ENABLED, true)
+        set(value) = prefs.edit().putBoolean(KEY_REASONING_CLOUD_ENABLED, value).apply()
+
+    var reasoningCloudEffort: String
+        get() = prefs.getString(KEY_REASONING_CLOUD_EFFORT, Reasoning.DEFAULT_LEVEL) ?: Reasoning.DEFAULT_LEVEL
+        set(value) = prefs.edit().putString(KEY_REASONING_CLOUD_EFFORT, value.trim()).apply()
+
+    // ── Reasoning (direkter Cloud-Kanal, je Anbieter-Eintrag übersteuerbar) ─
+    var reasoningDirectEnabled: Boolean
+        get() = prefs.getBoolean(KEY_REASONING_DIRECT_ENABLED, true)
+        set(value) = prefs.edit().putBoolean(KEY_REASONING_DIRECT_ENABLED, value).apply()
+
+    var reasoningDirectEffort: String
+        get() = prefs.getString(KEY_REASONING_DIRECT_EFFORT, Reasoning.DEFAULT_LEVEL) ?: Reasoning.DEFAULT_LEVEL
+        set(value) = prefs.edit().putString(KEY_REASONING_DIRECT_EFFORT, value.trim()).apply()
+
     /** Timeout bis zum ersten Token der Antwort (10 s .. 1 min). */
     var firstTokenTimeoutSec: Int
         get() = prefs.getInt(KEY_FIRST_TOKEN_TIMEOUT_SEC, DEFAULT_FIRST_TOKEN_TIMEOUT_SEC)
@@ -386,7 +415,11 @@ class AppConfig(context: Context) {
                         primaryProvider = o.optString("primaryProvider", ""),
                         primaryModel = o.optString("primaryModel", ""),
                         fallbackProvider = o.optString("fallbackProvider", ""),
-                        fallbackModel = o.optString("fallbackModel", "")
+                        fallbackModel = o.optString("fallbackModel", ""),
+                        localReasoningMode = o.optString("localReasoningMode", Reasoning.MODE_INHERIT),
+                        localReasoningEffort = o.optString("localReasoningEffort", ""),
+                        cloudReasoningMode = o.optString("cloudReasoningMode", Reasoning.MODE_INHERIT),
+                        cloudReasoningEffort = o.optString("cloudReasoningEffort", "")
                     ))
                 }
             }
@@ -408,6 +441,10 @@ class AppConfig(context: Context) {
             o.put("primaryModel", b.primaryModel)
             o.put("fallbackProvider", b.fallbackProvider)
             o.put("fallbackModel", b.fallbackModel)
+            o.put("localReasoningMode", b.localReasoningMode)
+            o.put("localReasoningEffort", b.localReasoningEffort)
+            o.put("cloudReasoningMode", b.cloudReasoningMode)
+            o.put("cloudReasoningEffort", b.cloudReasoningEffort)
             arr.put(o)
         }
         prefs.edit().putString(KEY_BOTS, arr.toString()).apply()
@@ -440,7 +477,9 @@ class AppConfig(context: Context) {
                         apiKey = decryptOrEmpty(o.optString("apiKey", "")),
                         primaryModel = o.optString("primaryModel", ""),
                         fallbackModel = o.optString("fallbackModel", ""),
-                        tools = readToolSlugs(o.optJSONArray("tools"))
+                        tools = readToolSlugs(o.optJSONArray("tools")),
+                        reasoningMode = o.optString("reasoningMode", Reasoning.MODE_INHERIT),
+                        reasoningEffort = o.optString("reasoningEffort", "")
                     ))
                 }
             }
@@ -461,6 +500,8 @@ class AppConfig(context: Context) {
             o.put("primaryModel", p.primaryModel)
             o.put("fallbackModel", p.fallbackModel)
             o.put("tools", JSONArray(p.tools))
+            o.put("reasoningMode", p.reasoningMode)
+            o.put("reasoningEffort", p.reasoningEffort)
             arr.put(o)
         }
         prefs.edit().putString(KEY_CLOUD_PROVIDERS, arr.toString()).apply()
@@ -603,6 +644,12 @@ class AppConfig(context: Context) {
         private const val KEY_FALLBACK_PROVIDER = "fallback_provider"
         private const val KEY_FALLBACK_MODEL = "fallback_model"
         private const val KEY_PRIMARY_FAIL_THRESHOLD = "primary_fail_threshold"
+        private const val KEY_REASONING_LOCAL_ENABLED = "reasoning_local_enabled"
+        private const val KEY_REASONING_LOCAL_EFFORT = "reasoning_local_effort"
+        private const val KEY_REASONING_CLOUD_ENABLED = "reasoning_cloud_enabled"
+        private const val KEY_REASONING_CLOUD_EFFORT = "reasoning_cloud_effort"
+        private const val KEY_REASONING_DIRECT_ENABLED = "reasoning_direct_enabled"
+        private const val KEY_REASONING_DIRECT_EFFORT = "reasoning_direct_effort"
         private const val KEY_BOTS = "bots"
         private const val KEY_ACTIVE_BOT = "active_bot"
         private const val KEY_CLOUD_PROVIDERS = "cloud_providers"

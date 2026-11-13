@@ -26,7 +26,16 @@ class BotProfile(
     var fallbackProvider: String = "",
     var fallbackModel: String = "",
     /** Anzeige-Avatar der Bot-Antworten: "face" (Standard) oder "robot". */
-    var avatar: String = "robot"
+    var avatar: String = "robot",
+    /** Reasoning-Override für lokale Modelle dieses Bots:
+     *  [Reasoning.MODE_INHERIT] (global), [Reasoning.MODE_ON] oder [Reasoning.MODE_OFF]. */
+    var localReasoningMode: String = Reasoning.MODE_INHERIT,
+    /** Denk-Stufe für lokale Modelle; leer = globalen Wert verwenden. */
+    var localReasoningEffort: String = "",
+    /** Reasoning-Override für Cloud-Modelle dieses Bots (gleiche Modi). */
+    var cloudReasoningMode: String = Reasoning.MODE_INHERIT,
+    /** Denk-Stufe für Cloud-Modelle; leer = globalen Wert verwenden. */
+    var cloudReasoningEffort: String = ""
 ) {
 
     /** true, sobald ein primäres Modell für diesen Bot konfiguriert ist. */

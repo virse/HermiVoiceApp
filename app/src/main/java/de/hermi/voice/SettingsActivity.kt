@@ -19,6 +19,7 @@ import de.hermi.voice.settings.CloudProvidersActivity
 import de.hermi.voice.settings.CredentialsActivity
 import de.hermi.voice.settings.LanguageActivity
 import de.hermi.voice.settings.NotificationActivity
+import de.hermi.voice.settings.ReasoningActivity
 import de.hermi.voice.settings.SettingsSectionActivity
 import de.hermi.voice.settings.SttModelActivity
 import de.hermi.voice.settings.TuningActivity
@@ -62,6 +63,7 @@ class SettingsActivity : AppCompatActivity() {
             Category(R.string.bots_section_title, R.string.settings_cat_bots_desc, BotsActivity::class.java),
             Category(R.string.model_choice_section_title, R.string.settings_cat_chatmodel_desc, ChatModelActivity::class.java),
             Category(R.string.cloud_section_title, R.string.settings_cat_cloud_desc, CloudProvidersActivity::class.java),
+            Category(R.string.reasoning_section_title, R.string.settings_cat_reasoning_desc, ReasoningActivity::class.java),
             Category(R.string.appearance_section_title, R.string.settings_cat_appearance_desc, AppearanceActivity::class.java),
             Category(R.string.accent_chatbg_section_title, R.string.settings_cat_accent_desc, AccentChatBgActivity::class.java),
             Category(R.string.avatar_section_title, R.string.settings_cat_avatars_desc, AvatarsActivity::class.java),

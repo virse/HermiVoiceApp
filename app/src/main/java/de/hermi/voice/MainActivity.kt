@@ -73,6 +73,8 @@ import de.hermi.voice.config.BotProfile
 import de.hermi.voice.config.ChatBackground
 import java.net.URLEncoder
 import java.util.Locale
+import de.hermi.voice.config.ModelOptionsFetcher
+import de.hermi.voice.config.Reasoning
 import de.hermi.voice.session.ChatMessage
 import de.hermi.voice.session.ChatSession
 import de.hermi.voice.session.GatewaySyncResult
@@ -966,6 +968,9 @@ class MainActivity : AppCompatActivity() {
         // Endpoint statt ans Hermes-Gateway. Ebenfalls als Schnappschuss für den
         // Hintergrund-Thread (activeCloud ist ein UI-Feld).
         val cloud = if (activeCloud != null && activeCloud!!.isUsable()) activeCloud else null
+        // Aktiver Bot als Schnappschuss für den Hintergrund-Thread (UI-Feld!).
+        // Seine Reasoning-Overrides gelten für DIESE Anfrage.
+        val sendBot = activeBot
         // Die Session, zu der DIESE Anfrage gehört, einmalig festhalten. Der Nutzer
         // darf während der Antwort die Session wechseln/neu anlegen; die Antwort
         // wird dann im Hintergrund in DIESER Session fertig (Historie, Gateway-ID,
@@ -1163,6 +1168,32 @@ class MainActivity : AppCompatActivity() {
             for (pair in attempts) {
                 val acc = StringBuilder()
                 val reasoningAcc = StringBuilder()
+                // Reasoning-Steuerung für DIESEN Versuch. Welcher Schalter gilt
+                // (lokal oder Cloud), entscheidet das Modell, das gerade läuft —
+                // beim Fallback-Wechsel kann das die andere Kategorie sein.
+                val reasoningDecision: Reasoning.Decision? = when {
+                    cloud != null ->
+                        Reasoning.directDecision(config, cloud, pair?.second ?: "")
+                    pair != null ->
+                        Reasoning.hermesDecision(
+                            config, ModelOptionsFetcher.get(), sendBot, pair.first, pair.second
+                        )
+                    else ->
+                        // Ohne Modellwahl läuft der Agent-Default (Cloud-Schalter).
+                        Reasoning.hermesDecision(
+                            config, ModelOptionsFetcher.get(), sendBot, "", ""
+                        )
+                }
+                // Denken liegt VOR dem ersten sichtbaren Token: das First-Token-
+                // Fenster muss dann deutlich großzügiger sein, sonst bricht die
+                // App ab, obwohl das Modell arbeitet (auf lokaler Hardware
+                // gemessen: >200 s bis zum ersten Token).
+                val attemptFirstTokenMs = if (reasoningDecision?.enabled == true) {
+                    maxOf(config.firstTokenTimeoutSec * 3_000L, 90_000L)
+                        .coerceAtMost(config.streamTimeoutMin * 60_000L)
+                } else {
+                    config.firstTokenTimeoutSec * 1000L
+                }
                 // true, sobald mindestens EIN Token (Inhalt ODER Denk-Token)
                 // angekommen ist. Blockiert den Fallback NUR bei echtem Text;
                 // reine Reasoning-Token zusammen mit einer HermesEmptyResponse-
@@ -1237,8 +1268,11 @@ class MainActivity : AppCompatActivity() {
                             model = pair?.second ?: "",
                             provider = cloud.provider,
                             enabledToolSlugs = cloud.tools,
+                            reasoningExtras = Reasoning.directExtras(
+                                cloud.provider, pair?.second ?: "", reasoningDecision
+                            ),
                             cancellationToken = cancelToken,
-                            firstTokenTimeoutMs = config.firstTokenTimeoutSec * 1000L,
+                            firstTokenTimeoutMs = attemptFirstTokenMs,
                             streamTimeoutMs = config.streamTimeoutMin * 60_000L,
                             onDelta = streamDelta,
                             onReasoning = streamReasoning
@@ -1252,7 +1286,8 @@ class MainActivity : AppCompatActivity() {
                         // und dient dem Server als Memory-Scope/Konversationsname.
                         sessionKey = sendSession.id,
                         cancellationToken = cancelToken,
-                        firstTokenTimeoutMs = config.firstTokenTimeoutSec * 1000L,
+                        modelOptions = Reasoning.hermesModelOptions(reasoningDecision),
+                        firstTokenTimeoutMs = attemptFirstTokenMs,
                         streamTimeoutMs = config.streamTimeoutMin * 60_000L,
                         onDelta = streamDelta,
                         onReasoning = streamReasoning,

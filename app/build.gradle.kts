@@ -10,7 +10,7 @@ plugins {
 // bzw. app-release_<version>.apk.
 // Beim nächsten Release hier hochzählen (z. B. "1.1") - Header und Dateiname
 // bleiben dann immer synchron.
-val appVersionName = "1.0.3"
+val appVersionName = "1.0.4"
 
 // Release-Signing: Zugangsdaten liegen in keystore.properties (NICHT ins Repo
 // einchecken - wird von .gitignore ausgeschlossen). Fehlt die Datei, baut das
@@ -29,7 +29,7 @@ android {
         applicationId = "de.hermi.voice"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
+        versionCode = 5
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

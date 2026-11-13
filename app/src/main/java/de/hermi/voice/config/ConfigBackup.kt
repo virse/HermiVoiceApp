@@ -70,6 +70,13 @@ object ConfigBackup {
         root.put("primary_model", config.primaryModel)
         root.put("fallback_provider", config.fallbackProvider)
         root.put("fallback_model", config.fallbackModel)
+        // Reasoning-Schalter (global): je Kanal getrennt, plus direkter Cloud-Kanal.
+        root.put("reasoning_local_enabled", config.reasoningLocalEnabled)
+        root.put("reasoning_local_effort", config.reasoningLocalEffort)
+        root.put("reasoning_cloud_enabled", config.reasoningCloudEnabled)
+        root.put("reasoning_cloud_effort", config.reasoningCloudEffort)
+        root.put("reasoning_direct_enabled", config.reasoningDirectEnabled)
+        root.put("reasoning_direct_effort", config.reasoningDirectEffort)
         root.put("active_bot", config.getActiveBotId())
 
         // App-Update-Einstellungen (Toggle, weggetippte/erzwungene Version).
@@ -96,6 +103,10 @@ object ConfigBackup {
             o.put("primary_model", b.primaryModel)
             o.put("fallback_provider", b.fallbackProvider)
             o.put("fallback_model", b.fallbackModel)
+            o.put("local_reasoning_mode", b.localReasoningMode)
+            o.put("local_reasoning_effort", b.localReasoningEffort)
+            o.put("cloud_reasoning_mode", b.cloudReasoningMode)
+            o.put("cloud_reasoning_effort", b.cloudReasoningEffort)
             botsArr.put(o)
         }
         root.put("bots", botsArr)
@@ -112,6 +123,8 @@ object ConfigBackup {
             o.put("primary_model", p.primaryModel)
             o.put("fallback_model", p.fallbackModel)
             o.put("tools", JSONArray(p.tools))
+            o.put("reasoning_mode", p.reasoningMode)
+            o.put("reasoning_effort", p.reasoningEffort)
             cloudArr.put(o)
         }
         root.put("cloud_providers", cloudArr)
@@ -177,7 +190,11 @@ object ConfigBackup {
                     primaryProvider = o.optString("primary_provider"),
                     primaryModel = o.optString("primary_model"),
                     fallbackProvider = o.optString("fallback_provider"),
-                    fallbackModel = o.optString("fallback_model")
+                    fallbackModel = o.optString("fallback_model"),
+                    localReasoningMode = o.optString("local_reasoning_mode", Reasoning.MODE_INHERIT),
+                    localReasoningEffort = o.optString("local_reasoning_effort", ""),
+                    cloudReasoningMode = o.optString("cloud_reasoning_mode", Reasoning.MODE_INHERIT),
+                    cloudReasoningEffort = o.optString("cloud_reasoning_effort", "")
                 ))
             }
             list
@@ -199,7 +216,9 @@ object ConfigBackup {
                     apiKey = apiKey,
                     primaryModel = o.optString("primary_model"),
                     fallbackModel = o.optString("fallback_model"),
-                    tools = readToolSlugs(o.optJSONArray("tools"))
+                    tools = readToolSlugs(o.optJSONArray("tools")),
+                    reasoningMode = o.optString("reasoning_mode", Reasoning.MODE_INHERIT),
+                    reasoningEffort = o.optString("reasoning_effort", "")
                 ))
             }
             list
@@ -238,6 +257,14 @@ object ConfigBackup {
         config.primaryModel = str("primary_model", config.primaryModel)
         config.fallbackProvider = str("fallback_provider", config.fallbackProvider)
         config.fallbackModel = str("fallback_model", config.fallbackModel)
+        // Reasoning-Schalter (global). Fehlt ein Schlüssel (älteres Backup), bleibt
+        // der aktuelle Wert stehen — wie bei allen anderen Toggles.
+        config.reasoningLocalEnabled = bool("reasoning_local_enabled", config.reasoningLocalEnabled)
+        config.reasoningLocalEffort = str("reasoning_local_effort", config.reasoningLocalEffort)
+        config.reasoningCloudEnabled = bool("reasoning_cloud_enabled", config.reasoningCloudEnabled)
+        config.reasoningCloudEffort = str("reasoning_cloud_effort", config.reasoningCloudEffort)
+        config.reasoningDirectEnabled = bool("reasoning_direct_enabled", config.reasoningDirectEnabled)
+        config.reasoningDirectEffort = str("reasoning_direct_effort", config.reasoningDirectEffort)
 
         // Globaler API-Key: bereits in Phase 1 entschlüsselt, hier per Setter neu verschlüsseln.
         config.apiKey = importedApiKey

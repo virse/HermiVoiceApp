@@ -11,6 +11,7 @@ import de.hermi.voice.R
 import de.hermi.voice.config.BotProfile
 import de.hermi.voice.config.ModelOptionsFetcher
 import de.hermi.voice.config.ModelPickerDialog
+import de.hermi.voice.config.Reasoning
 import java.util.UUID
 import kotlin.concurrent.thread
 
@@ -71,7 +72,30 @@ class BotsActivity : SettingsSectionActivity() {
         if (prim == null && fb == null) {
             sb.append('\n').append(getString(R.string.bot_info_no_model))
         }
+        sb.append('\n').append(
+            getString(R.string.reasoning_bot_local_label) + ": " +
+                reasoningLabel(b.localReasoningMode, b.localReasoningEffort)
+        )
+        sb.append('\n').append(
+            getString(R.string.reasoning_bot_cloud_label) + ": " +
+                reasoningLabel(b.cloudReasoningMode, b.cloudReasoningEffort)
+        )
         return sb.toString()
+    }
+
+    /** Kurzlabel „An · medium" / „Aus" / „Global (Standard)" für die Übersicht. */
+    private fun reasoningLabel(mode: String, effort: String): String {
+        val m = when (mode) {
+            Reasoning.MODE_ON -> getString(R.string.reasoning_mode_on)
+            Reasoning.MODE_OFF -> getString(R.string.reasoning_mode_off)
+            else -> getString(R.string.reasoning_mode_inherit)
+        }
+        return when {
+            mode == Reasoning.MODE_OFF -> m
+            effort.isBlank() -> m
+            effort == Reasoning.LEVEL_DEFAULT -> "$m · ${getString(R.string.reasoning_level_default)}"
+            else -> "$m · $effort"
+        }
     }
 
     private fun showBotEditor(existing: BotProfile?) {
@@ -80,7 +104,11 @@ class BotsActivity : SettingsSectionActivity() {
             BotProfile(
                 id = it.id, name = it.name, apiKey = it.apiKey, serverBase = it.serverBase,
                 primaryProvider = it.primaryProvider, primaryModel = it.primaryModel,
-                fallbackProvider = it.fallbackProvider, fallbackModel = it.fallbackModel
+                fallbackProvider = it.fallbackProvider, fallbackModel = it.fallbackModel,
+                localReasoningMode = it.localReasoningMode,
+                localReasoningEffort = it.localReasoningEffort,
+                cloudReasoningMode = it.cloudReasoningMode,
+                cloudReasoningEffort = it.cloudReasoningEffort
             )
         } ?: BotProfile(id = UUID.randomUUID().toString(), name = "")
 
@@ -158,6 +186,20 @@ class BotsActivity : SettingsSectionActivity() {
 
         primaryBtn.setOnClickListener { openBotPicker(false) }
         fallbackBtn.setOnClickListener { openBotPicker(true) }
+
+        // Reasoning-Overrides dieses Bots (global / an / aus + eigene Stufe).
+        ReasoningUi.setupMode(this, view.findViewById(R.id.botEditLocalReasoning), editor.localReasoningMode) {
+            editor.localReasoningMode = it
+        }
+        ReasoningUi.setupLevel(this, view.findViewById(R.id.botEditLocalReasoningLevel), editor.localReasoningEffort) {
+            editor.localReasoningEffort = it
+        }
+        ReasoningUi.setupMode(this, view.findViewById(R.id.botEditCloudReasoning), editor.cloudReasoningMode) {
+            editor.cloudReasoningMode = it
+        }
+        ReasoningUi.setupLevel(this, view.findViewById(R.id.botEditCloudReasoningLevel), editor.cloudReasoningEffort) {
+            editor.cloudReasoningEffort = it
+        }
 
         AlertDialog.Builder(this)
             .setTitle(if (isNew) R.string.bot_add else R.string.bot_edit)

@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.0.4] — Reasoning steuerbar (2026-11-13, versionCode 5)
+
+### Neu
+
+- **Eigene Einstellungs-Sektion „Reasoning"**: Denken der Modelle lässt sich jetzt
+  gezielt steuern — auf Wunsch aus (deutlich schnellere Antworten auf lokaler Hardware)
+  oder an mit einer Denk-Stufe von `minimal` bis `max`. Die beiden Bereiche
+  „lokale Modelle" und „Cloud-Modelle (Hermes-Server)" sind voneinander unabhängig;
+  welcher greift, entscheidet das Modell, das die Antwort tatsächlich liefert.
+- **Pro Bot übersteuerbar**: jeder Bot (Profil) kann für lokale und für Cloud-Modelle
+  eigene Werte setzen (Global / An / Aus + eigene Stufe) und erbt sonst die globalen.
+- **Pro Cloud-Anbieter übersteuerbar**: im Cloud-Editor hat jeder Eintrag einen eigenen
+  Reasoning-Schalter samt Stufe — im anbieterspezifischen Format (OpenRouter, DeepSeek,
+  Groq, Mistral, OpenAI).
+- **First-Token-Fenster wächst mit**: denkt ein Modell, wird die Wartezeit bis zum ersten
+  Token automatisch gestreckt (mindestens 90 s), damit lange Denkphasen die Antwort nicht
+  abbrechen.
+
+### Geändert
+
+- Die Reasoning-Regler sind aus „Hermes-KI-Modell" in die neue Sektion gewandert —
+  dort steht nur noch die Modellwahl mit Fallback, Schwelle und Test.
+- Modelle ohne Reasoning-Unterstützung werden ausgegraut; Anbieter, die das Denken nicht
+  abschalten können (z. B. OpenAI), bieten „Aus" nicht mehr an, statt einen wirkungslosen
+  Schalter zu zeigen.
+
+### Technik
+
+- Hermes-Kanal: Steuerung pro Anfrage über `model_options.reasoning` (`enabled`, `effort`).
+- Cloud-Direktkanal: anbietergerechte Felder (`reasoning`, `thinking`, `reasoning_effort`).
+- Reasoning-Einstellungen sind im Konfig-Backup enthalten (global, je Bot, je Anbieter).
+
+
 ## [1.0.3] — Markdown-Tabellen lesbar (2026-11-09, versionCode 4)
 
 ### Neu

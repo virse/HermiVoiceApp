@@ -19,13 +19,43 @@ import java.net.URL
  */
 class ModelOptionsFetcher private constructor() {
 
+    /** Reasoning-Fähigkeiten eines Modells laut Gateway (`/api/model/options`). */
+    data class ModelCaps(
+        /** Modell kann denken. */
+        val reasoning: Boolean,
+        /** Denken lässt sich abschalten (Cloud-Modelle liefern das mit; Default true). */
+        val canDisableReasoning: Boolean
+    )
+
     /** Ein Provider mit seinem Modell-Label in der Anzeige: "name (slug)". */
-    class Provider(val slug: String, val name: String, var models: List<String>)
+    class Provider(
+        val slug: String,
+        val name: String,
+        var models: List<String>,
+        /** true = lokal betriebener Endpunkt (user-config/api_url im eigenen LAN). */
+        val local: Boolean = false,
+        /** Modell-ID → Fähigkeiten (leer, wenn das Gateway nichts dazu liefert). */
+        val capabilities: Map<String, ModelCaps> = emptyMap()
+    )
 
     private var cached: List<Provider>? = null
 
     /** Liefert die (ggf. gecachte) Provider-/Modellliste. */
-    fun getProviders(): List<Provider>? = cached?.map { Provider(it.slug, it.name, it.models) }
+    fun getProviders(): List<Provider>? = cached?.map {
+        Provider(it.slug, it.name, it.models, it.local, it.capabilities)
+    }
+
+    /**
+     * true/false, wenn der Provider aus der Gateway-Liste bekannt ist (lokal
+     * betriebener Endpunkt = `is_user_defined`/`source: "user-config"`), sonst
+     * null (= unbekannt, der Aufrufer entscheidet über eine Ersatz-Heuristik).
+     */
+    fun isLocalProvider(slug: String): Boolean? =
+        cached?.firstOrNull { it.slug == slug }?.local
+
+    /** Fähigkeiten eines Modells, sofern das Gateway sie gemeldet hat. */
+    fun capabilitiesFor(providerSlug: String, model: String): ModelCaps? =
+        cached?.firstOrNull { it.slug == providerSlug }?.capabilities?.get(model)
 
     /**
      * Lädt die Liste frisch vom Gateway. Bei Erfolg wird der Cache ersetzt.
@@ -71,7 +101,27 @@ class ModelOptionsFetcher private constructor() {
                     }
                 }
                 if (slug.isNotEmpty() && modelList.isNotEmpty()) {
-                    result.add(Provider(slug, name, modelList))
+                    // Lokal betriebener Endpunkt: eigener Provider aus der config.yaml
+                    // (ollama, llama.cpp, Strata …) — im Gegensatz zu den eingebauten
+                    // Cloud-Anbietern. Nur so kann die App den lokalen vom Cloud-Schalter
+                    // trennen, ohne Anbieter-Namen fest einzubauen.
+                    val local = p.optBoolean("is_user_defined", false) ||
+                        p.optString("source", "").trim() == "user-config"
+                    // Reasoning-Fähigkeiten je Modell (reasoning / can_disable_reasoning).
+                    val caps = mutableMapOf<String, ModelCaps>()
+                    val capsObj = p.optJSONObject("capabilities")
+                    if (capsObj != null) {
+                        val keys = capsObj.keys()
+                        while (keys.hasNext()) {
+                            val modelId = keys.next()
+                            val c = capsObj.optJSONObject(modelId) ?: continue
+                            caps[modelId] = ModelCaps(
+                                reasoning = c.optBoolean("reasoning", false),
+                                canDisableReasoning = c.optBoolean("can_disable_reasoning", true)
+                            )
+                        }
+                    }
+                    result.add(Provider(slug, name, modelList, local, caps))
                 }
             }
             if (result.isEmpty()) {

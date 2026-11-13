@@ -26,7 +26,12 @@ class CloudProvider(
     var fallbackModel: String = "",
     /** Aktivierte Server-Tools (Slugs aus [CloudTools.available]). Leer = ohne Tools.
      *  Der Cloud-Direktkanal sendet dann KEIN "tools"-Array (unverändertes Verhalten). */
-    var tools: Set<String> = emptySet()
+    var tools: Set<String> = emptySet(),
+    /** Reasoning-Override für diesen Eintrag: [Reasoning.MODE_INHERIT] (global),
+     *  [Reasoning.MODE_ON] oder [Reasoning.MODE_OFF]. */
+    var reasoningMode: String = Reasoning.MODE_INHERIT,
+    /** Denk-Stufe dieses Eintrags; leer = globalen Wert verwenden. */
+    var reasoningEffort: String = ""
 ) {
 
     /** Basis-URL des Anbieters aus der fixen Provider-Tabelle. */

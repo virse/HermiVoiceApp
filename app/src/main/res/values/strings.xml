@@ -8,6 +8,9 @@
     <string name="settings_cat_bots_desc">Mehrere Hermes-Profile mit eigenem API-Key und eigener Modellwahl</string>
     <string name="settings_cat_stt_desc">Installierte Spracherkennung prüfen und aktualisieren</string>
     <string name="settings_cat_chatmodel_desc">Primärmodell, Fallback und Test für die Antworten</string>
+    <string name="reasoning_section_title">Reasoning</string>
+    <string name="settings_cat_reasoning_desc">Denken der lokalen und der Cloud-Modelle steuern (an/aus und Denk-Stufe)</string>
+    <string name="reasoning_section_hint">Diese Werte gelten global und werden bei jeder Anfrage angewandt. Bots und Cloud-Anbieter-Einträge können sie einzeln übersteuern. Welcher Regler greift, entscheidet das Modell, das die Antwort liefert — auch beim Fallback-Modell.</string>
     <string name="settings_cat_appearance_desc">Antwort-Trenner, Vibration, Eingabe und Startmodus</string>
     <string name="accent_chatbg_section_title">Akzent &amp; Hintergrund</string>
     <string name="settings_cat_accent_desc">Akzentfarbe und Chat-Hintergrund (Standard/Verlauf/Bild)</string>
@@ -309,6 +312,28 @@
     <string name="cloud_tool_web_search_label">Websuche aktiv</string>
     <string name="cloud_tool_web_search_hint">Ermöglicht dem Anbieter, bei Bedarf aktuelle Web-Ergebnisse zu suchen.</string>
     <string name="cloud_tool_not_supported">nicht über diesen Anbieter-/Endpoint verfügbar</string>
+    <!-- ── Reasoning (An/Aus + Denk-Stufe) ── -->
+    <string name="reasoning_local_label">Reasoning – lokale Modelle</string>
+    <string name="reasoning_local_hint">Steuert, ob lokale Modelle vor der Antwort denken. Die Stufe wirkt nur, wenn das Modell sie kennt (z. B. gpt-oss über Ollama); llama.cpp unterscheidet nur an/aus. Aus = deutlich schnellere Antworten.</string>
+    <string name="reasoning_cloud_label">Reasoning – Cloud-Modelle (Hermes-Server)</string>
+    <string name="reasoning_cloud_hint">Gilt für Cloud-Modelle, die über den Hermes-Server laufen. Die Stufe wird an den Anbieter weitergereicht und dort auf das Verfügbare begrenzt.</string>
+    <string name="reasoning_switch_label">Reasoning aktiv</string>
+    <string name="reasoning_level_label">Denk-Stufe</string>
+    <string name="reasoning_level_default">Standard (nicht setzen)</string>
+    <string name="reasoning_level_no_steps">keine Stufen (nur an/aus)</string>
+    <string name="reasoning_not_supported">Dieses Modell meldet kein Reasoning – es werden keine Reasoning-Parameter gesendet.</string>
+    <string name="reasoning_off_not_supported">Dieses Modell kann Reasoning nicht abschalten – es bleibt immer an.</string>
+    <string name="reasoning_mode_inherit">Global (Standard)</string>
+    <string name="reasoning_level_inherit">Globalen Wert verwenden</string>
+    <string name="reasoning_mode_on">An</string>
+    <string name="reasoning_mode_off">Aus</string>
+    <string name="reasoning_bot_local_label">Reasoning lokal (dieser Bot)</string>
+    <string name="reasoning_bot_cloud_label">Reasoning Cloud (dieser Bot)</string>
+    <string name="reasoning_cloud_direct_label">Reasoning (dieser Anbieter)</string>
+    <string name="reasoning_cloud_direct_hint">Wird direkt an den Anbieter gesendet (OpenRouter: reasoning, DeepSeek: thinking, sonst reasoning_effort). Nicht jeder Anbieter kann das Denken abschalten.</string>
+    <string name="reasoning_info_prefix">Reasoning</string>
+    <string name="reasoning_info_value">%1$s · Stufe %2$s</string>
+    <string name="reasoning_info_off">Aus</string>
     <string name="cloud_models_invalid">Dieser Anbieter liefert keine gültige OpenAI-kompatible Modell-Liste.</string>
     <string name="partial_connection_lost"> (Verbindung nach Teilempfang abgebrochen: %1$s)</string>
     <string name="send_failed_with_reason">Senden fehlgeschlagen: %1$s</string>
